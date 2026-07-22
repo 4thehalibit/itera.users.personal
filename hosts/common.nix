@@ -67,6 +67,18 @@
     # Desktop: mango (dwl/wlroots) + DankMaterialShell. mango is opt-in.
     desktop.mango.enable = true;
 
+    # Extra home dirs to persist beyond itera's curated set (which already keeps
+    # .config/.local/.cache/.ssh/.claude/Documents/Downloads). These two hold
+    # data restored from the Ventoy backup by install.sh — without persisting
+    # them the restored copies would vanish on the first wiped-root boot.
+    #   Pictures — screenshots + saved images
+    #   Vonage   — Linphone contacts CSV/VCF used by the Super+Shift+P popup
+    #              (see apps/common/vonage-directory.nix, which flagged this gap)
+    impermanence.users.vwestberg.directories = [
+      "Pictures"
+      "Vonage"
+    ];
+
     users.vwestberg = {
       description = "Vincent Westberg";
       extraGroups = [

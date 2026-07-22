@@ -55,6 +55,15 @@ It prompts for the disk, confirms the wipe, and runs `disko-install`. After it
 finishes: reboot, log in as `vwestberg` / `changeme`, then **`passwd`** to set a
 real password.
 
+**Auto-restore:** with the Ventoy still plugged in, `install.sh` then seeds the
+new `/persist` subvolume from the newest `nixos-backup-*` folder on it — home
+data (`Documents`, `Pictures`, `Vonage`, `.claude`/`.claude.json`, Vivaldi
+profile) and saved Wi-Fi (NetworkManager profiles) — so the first boot already
+has your files and networks. It's best-effort: if no Ventoy/backup is found it
+skips and the install still succeeds. Disable with `RESTORE=0`, or point it at an
+already-mounted dir with `BACKUP_DIR=/path`. Wi-Fi passwords live only on the
+Ventoy, never in this repo.
+
 ## Rebuild
 
 ```sh
