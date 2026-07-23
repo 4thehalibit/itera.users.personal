@@ -98,7 +98,13 @@ in
       lock_screen               = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "Escape"; mangoCommand = "spawn_shell"; commandArguments = "dms ipc call lock lock"; };
       notifications             = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "n";      mangoCommand = "spawn_shell"; commandArguments = "dms ipc call notifications toggle"; };
       clipboard_toggle          = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "v";      mangoCommand = "spawn_shell"; commandArguments = "dms ipc call clipboard toggle"; };
-      paste_clipboard           = { modifierKeys = [ "CTRL" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "v";      mangoCommand = "spawn_shell"; commandArguments = "dms cl paste | wtype -"; };
+      # paste_clipboard REMOVED (2026-07-22): this globally grabbed CTRL+SHIFT+V
+      # and ran `dms cl paste | wtype -`, which RETYPED the clipboard via a virtual
+      # keyboard — wtype's keymap mismatched and produced garbage (e.g. random
+      # digits/symbols) instead of the real text. Ungrabbing the key lets the
+      # focused app paste natively from the real clipboard (which DMS keeps
+      # populated): CTRL+SHIFT+V in wezterm, CTRL+V in GUI apps. History picker is
+      # still SUPER+V (clipboard_toggle above). See [[project-migration-dropped-deps]].
       open_settings             = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "comma";  mangoCommand = "spawn_shell"; commandArguments = "dms ipc call settings toggle"; };
       night_mode                = { modifierKeys = [ "SUPER" "CTRL" ];  flagModifiers = [ "s" ]; keySymbol = "n";      mangoCommand = "spawn_shell"; commandArguments = "dms ipc call night toggle"; }; # eiros override SHIFT -> CTRL
       screenshot                = { modifierKeys = [ ];                 flagModifiers = [ "s" ]; keySymbol = "Print";  mangoCommand = "spawn_shell"; commandArguments = "dms screenshot -d ~/Pictures/Screenshots"; }; # eiros override SUPER+SHIFT+s -> Print
