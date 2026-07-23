@@ -40,18 +40,9 @@
     # (separate step, can layer on later). usbSupport auto-enables (itera flags the
     # Framework's built-in keyboard as USB-internal) so the recovery prompt is
     # typable — leave it on; do NOT override it to false.
-    disko.encryption = {
-      enable = true;
-      tpm2.enable = true;
-      # Non-interactive install: install.sh prompts once, writes the passphrase
-      # here (tmpfs, shredded on exit), and disko-install reads it from this file
-      # instead of prompting cryptsetup interactively over the TTY. Avoids a known
-      # disko-install bug (nix-community/disko #1123, #983) where an interactive
-      # LUKS passphrase prompt leaves /boot unmounted by the time the bootloader
-      # install step runs ("efiSysMountPoint = '/boot' is not a mounted partition").
-      passwordFile = "/tmp/luks-password";
-    };
-
+   
+    disko.encryption.enable = false;
+    
     fingerprint.enable = true;
     printing.enable = true; # hplipWithPlugin + mDNS + GUI (matches eiros work)
 
