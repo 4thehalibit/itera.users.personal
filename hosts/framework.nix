@@ -132,6 +132,16 @@
   # default stop timeout so a future hang is force-killed after 30s instead.
   systemd.settings.Manager.DefaultTimeoutStopSec = "30s";
 
+  # Reboot hang, stage 2: with the unmount hang above fixed, shutdown now
+  # completes cleanly in ~1s, but the machine then sits black-screen for ~40 min
+  # before the next POST (journal 2026-07-22: boot -1 shut down 23:19:48, next
+  # boot 00:00:32). The hang is in the firmware reset call itself — nothing logs
+  # because journald is already down. FW16 AMD (BIOS 03.05, kernel 7.x) is prone
+  # to hanging on the EFI ResetSystem path, made likelier here by the hardened
+  # `efi=disable_early_pci_dma`. Force the ACPI reset method instead. Merges with
+  # itera's kernelParams (listOf). If a hang recurs, try "reboot=pci"/"reboot=bios".
+  boot.kernelParams = [ "reboot=acpi" ];
+
   # MT7922 Bluetooth: eiros pinned kernels to dodge a btmtk Oops; the fix was
   # expected upstream. On itera/unstable it is likely already fixed — VERIFY BT
   # after first boot and only pin a kernel here if it regresses (see eiros memory
