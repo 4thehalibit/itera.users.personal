@@ -1,5 +1,5 @@
 # framework — Framework 16 (AMD Ryzen 7040) work laptop, hostname LS-04391.
-{ itera, ... }:
+{ itera, pkgs, ... }:
 {
   imports = [
     # Framework 16 hardware quirks, re-exported by itera from nixos-hardware.
@@ -84,6 +84,25 @@
     users.vwestberg.programs.mango.extraConfig = ''
       exec-once=sh -c 'sleep 15 && output=$(wlr-randr | grep VX3211-4K | awk "{print \$1}") && [ -n "$output" ] && wlr-randr --output "$output" --off && sleep 2 && wlr-randr --output "$output" --on && sleep 1 && wlr-randr --output eDP-1 --pos 2560,220'
     '';
+  };
+
+  # Boot splash: itera's hardening boots fully silent (`quiet loglevel=0
+  # udev.log_level=3`), so from bootloader handoff until the DMS greeter paints
+  # there was only a black screen — long enough (with all the IOMMU/mitigation
+  # params) to look like the machine had hung. Plymouth fills that window with a
+  # graphical splash. Plain NixOS option; composes over itera's kernel params.
+  #
+  # Theme: adi1090x's `deus_ex` — black + gold HUD ring around the OS logo with
+  # a subtle rotating arc (warm, futuristic, understated). Override builds ONLY
+  # this theme instead of the full ~200-theme pack. Browse alternatives at
+  # https://github.com/adi1090x/plymouth-themes then swap the name in both the
+  # `theme` string and `selected_themes` list.
+  boot.plymouth = {
+    enable = true;
+    theme = "deus_ex";
+    themePackages = [
+      (pkgs.adi1090x-plymouth-themes.override { selected_themes = [ "deus_ex" ]; })
+    ];
   };
 
   # MT7922 Bluetooth: eiros pinned kernels to dodge a btmtk Oops; the fix was
