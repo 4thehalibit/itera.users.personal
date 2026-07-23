@@ -1,15 +1,27 @@
-# WezTerm rendering backend.
+# WezTerm rendering + windowing backend.
 #
-# itera ships WezTerm with no `front_end` set, so it uses WezTerm's default —
-# WebGpu (Vulkan). On this Framework 16 (AMD Radeon 780M / amdgpu) under mango
-# (wlroots), WebGpu fails to stand up a second GPU context: opening a SECOND
-# terminal window crashes. (itera's own dev/vm.nix flags WebGpu/GL context
-# fragility here.) Force OpenGL instead — still GPU-accelerated, much more
-# robust. If a crash somehow persists, drop to front_end = "Software".
+# Two separate second-window crashes on this Framework 16 (AMD Radeon 780M /
+# amdgpu) under mango (wlroots):
 #
-# Rendered by itera's wezterm renderer as `config.front_end = 'OpenGL'` in
-# ~/.config/wezterm/wezterm.lua.
+#   1. GPU context (fixed): itera's default front_end is WebGpu (Vulkan), which
+#      fails to stand up a SECOND GPU context here — opening a second terminal
+#      window crashed. Forcing OpenGL (still GPU-accelerated, more robust) fixed
+#      that. (itera's own dev/vm.nix flags WebGpu/GL context fragility here.)
+#
+#   2. Wayland protocol (this fix): with the GPU crash gone, opening a second
+#      window still died — this time with "Protocol error 2 on object
+#      wl_surface@N" followed by "Broken pipe (os error 32)". That's WezTerm's
+#      NATIVE Wayland client mishandling the second window's surface against a
+#      wlroots compositor (a WezTerm-side bug, not a mango misconfig). Disable
+#      the native Wayland backend so WezTerm runs via Xwayland (X11 backend),
+#      which handles multiple windows reliably. OpenGL acceleration still applies.
+#
+# Rendered by itera's wezterm renderer into ~/.config/wezterm/wezterm.lua as
+# `config.front_end = 'OpenGL'` and `config.enable_wayland = false`.
 { ... }:
 {
-  itera.users.vwestberg.programs.wezterm.settings.front_end = "OpenGL";
+  itera.users.vwestberg.programs.wezterm.settings = {
+    front_end = "OpenGL";
+    enable_wayland = false;
+  };
 }
