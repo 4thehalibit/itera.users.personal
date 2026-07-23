@@ -105,15 +105,32 @@
     ];
   };
 
-  # MT7922 Wi-Fi (mt7921e): with power-save at the driver default (ON), the card
-  # silently stalls after a few minutes idle — stays associated but passes no
-  # packets, so NetworkManager logs nothing and only `systemctl restart
-  # NetworkManager` (re-association) restores it. Diagnosed 2026-07-22 from a
-  # journal showing zero NM state-changes between manual restarts. Disabling
-  # power-save fixes it. If stalls ever return despite this, escalate to a PCIe
-  # ASPM workaround (kernel param `pcie_aspm=off`) — but no kernel resets were
-  # seen, so power-save alone is the targeted fix.
+  # MT7922 Wi-Fi (mt7921e): the card silently stalls every ~15-20 min — stays
+  # associated but passes no packets, so NetworkManager logs nothing and only
+  # `systemctl restart NetworkManager` (re-association) restores it. Every drop
+  # is `reason=3 locally_generated=1`: the client gives up, the AP never deauths,
+  # and there is NO firmware crash / driver reset / beacon-loss in the kernel log,
+  # so mac80211 never notices the dead link.
+  #
+  # Disabling power-save (below) was the first fix but is INSUFFICIENT — re-checked
+  # 2026-07-22, powersave=2 is applied yet the stall recurs. Next targeted attempt
+  # is PCIe ASPM: force the mt7921e out of ASPM power management via a module
+  # option (less blunt than a global `pcie_aspm=off`). `iw` is added so the runtime
+  # power_state / beacon counters can be sampled live during a stall.
   networking.networkmanager.wifi.powersave = false;
+  boot.extraModprobeConfig = "options mt7921e disable_aspm=1";
+  environment.systemPackages = [ pkgs.iw ];
+
+  # dhcpcd runs redundantly alongside NetworkManager (NM does its own DHCP for
+  # managed interfaces). The standalone dhcpcd was segfaulting and fighting over
+  # the DHCPv6 socket (`Address already in use`); disable it to remove the noise.
+  networking.dhcpcd.enable = false;
+
+  # Reboot safety net: a stuck final unmount (the always-connected Framework
+  # exFAT storage module didn't unmount cleanly) once hung shutdown for ~40 min
+  # with a no-limit stop job — invisible behind the Plymouth splash. Cap the
+  # default stop timeout so a future hang is force-killed after 30s instead.
+  systemd.settings.Manager.DefaultTimeoutStopSec = "30s";
 
   # MT7922 Bluetooth: eiros pinned kernels to dodge a btmtk Oops; the fix was
   # expected upstream. On itera/unstable it is likely already fixed — VERIFY BT
