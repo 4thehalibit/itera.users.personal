@@ -56,7 +56,7 @@ _seed_file() { # <src-file> <dest-file>
 # fail the (already-completed) OS install.
 restore_backup() {
   device="$1"
-  ventoy_mnt=""; owned_mnt=0; persist=""
+  ventoy_mnt=""; owned_mnt=0; persist=""; opened_luks=""
 
   if [ "$RESTORE" != "1" ]; then echo "restore: skipped (RESTORE=0)."; return 0; fi
 
@@ -86,9 +86,25 @@ restore_backup() {
   echo; echo "restore: using backup $backup"
 
   # --- mount the just-installed /persist subvolume ---
+  # Unencrypted installs expose a btrfs partition directly. Encrypted installs
+  # (itera.disko.encryption.enable) put the btrfs INSIDE a LUKS container on the
+  # disk-${DISK_NAME}-root partition; disko-install closes it after formatting, so
+  # open it here — cryptsetup prompts for the passphrase you set during install.
   btrfs_part="$(lsblk -pnro NAME,FSTYPE "$device" 2>/dev/null | awk '$2=="btrfs"{print $1; exit}')"
   if [ -z "$btrfs_part" ]; then
+    root_luks="/dev/disk/by-partlabel/disk-${DISK_NAME}-root"
+    if [ -b "$root_luks" ] && cryptsetup isLuks "$root_luks" 2>/dev/null; then
+      echo "restore: encrypted install — unlocking $root_luks (enter the disk passphrase) ..."
+      if cryptsetup open "$root_luks" iterarestore <"$TTY"; then
+        opened_luks="iterarestore"; btrfs_part="/dev/mapper/iterarestore"
+      else
+        echo "restore: could not unlock LUKS — skipping (restore manually after first boot)."
+      fi
+    fi
+  fi
+  if [ -z "$btrfs_part" ]; then
     echo "restore: no btrfs partition on $device — skipping."
+    [ -n "$opened_luks" ] && { cryptsetup close "$opened_luks" 2>/dev/null || true; }
     [ "$owned_mnt" = 1 ] && { umount "$ventoy_mnt" 2>/dev/null || true; rmdir "$ventoy_mnt" 2>/dev/null || true; }
     return 0
   fi
@@ -96,6 +112,7 @@ restore_backup() {
   if ! mount -o subvol=persist "$btrfs_part" "$persist" 2>/dev/null; then
     echo "restore: could not mount persist subvol on $btrfs_part — skipping."
     rmdir "$persist" 2>/dev/null || true
+    [ -n "$opened_luks" ] && { cryptsetup close "$opened_luks" 2>/dev/null || true; }
     [ "$owned_mnt" = 1 ] && { umount "$ventoy_mnt" 2>/dev/null || true; rmdir "$ventoy_mnt" 2>/dev/null || true; }
     return 0
   fi
@@ -134,6 +151,7 @@ restore_backup() {
 
   sync
   umount "$persist" 2>/dev/null || true; rmdir "$persist" 2>/dev/null || true
+  [ -n "$opened_luks" ] && { cryptsetup close "$opened_luks" 2>/dev/null || true; }
   [ "$owned_mnt" = 1 ] && { umount "$ventoy_mnt" 2>/dev/null || true; rmdir "$ventoy_mnt" 2>/dev/null || true; }
   echo "restore: done."
 }

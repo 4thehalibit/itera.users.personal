@@ -24,6 +24,27 @@
     disko.device = "/dev/disk/by-id/CHANGE-ME-disko-install-overrides-this";
     disko.swapSize = "32G"; # >= RAM for hibernation
 
+    # Full-disk encryption (LUKS): wraps the btrfs root (/, /nix, /persist) AND the
+    # swap partition, so everything at rest — including the hibernation image — is
+    # encrypted. The ESP stays plaintext (firmware must read it). Opt-in in itera.
+    #
+    # TPM2 auto-unlock: the machine's TPM2 unseals the volume on a trusted boot, so
+    # ordinary boots type nothing; the install-time passphrase stays enrolled as a
+    # RECOVERY fallback (used only if the sealed PCR state changes — firmware/Secure
+    # Boot changes). Enrollment binds to the live TPM, so it happens once on THIS
+    # machine: the first boot after an install falls back to the passphrase, then
+    # `sudo itera-tpm2-enroll` binds the TPM and every boot after is passwordless.
+    #
+    # NOTE: TPM unlock without Secure Boot stops a PULLED disk from being read but
+    # not a thief who powers the laptop on — enable itera.secureBoot too for that
+    # (separate step, can layer on later). usbSupport auto-enables (itera flags the
+    # Framework's built-in keyboard as USB-internal) so the recovery prompt is
+    # typable — leave it on; do NOT override it to false.
+    disko.encryption = {
+      enable = true;
+      tpm2.enable = true;
+    };
+
     fingerprint.enable = true;
     printing.enable = true; # hplipWithPlugin + mDNS + GUI (matches eiros work)
 
