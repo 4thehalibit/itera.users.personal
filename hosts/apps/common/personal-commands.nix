@@ -1,7 +1,7 @@
 # Personal commands from eiros, re-expressed as real executables on PATH instead
 # of zsh aliases/functions — so they work under itera's default shell (nushell)
 # or any other. Replaces eiros applications/aliases.nix.
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 let
   # fixhdmi: force the ViewSonic 4K to re-sync (off/on) when it comes up blank.
   fixhdmi = pkgs.writeShellScriptBin "fixhdmi" ''
@@ -15,8 +15,12 @@ let
     fi
   '';
 
-  # claude: run the Claude Code CLI from the ~/claude working dir.
+  # claude: run the Claude Code CLI from the ~/claude working dir. The dir keys
+  # the Claude "project" (memory/history live under -home-vwestberg-claude), so
+  # ensure it exists — impermanence wipes $HOME each boot and ~/claude is not on
+  # the persist allowlist, so mkdir it here rather than relying on it surviving.
   claudeCmd = pkgs.writeShellScriptBin "claude" ''
+    mkdir -p "$HOME/claude"
     cd "$HOME/claude" 2>/dev/null || cd "$HOME"
     exec ${pkgs.claude-code}/bin/claude "$@"
   '';
@@ -47,7 +51,10 @@ in
 {
   environment.systemPackages = [
     fixhdmi
-    claudeCmd
+    # hiPri so this "claude" wins the PATH collision against the claude-code that
+    # itera.ai.claude.enable also installs — otherwise the raw package shadows the
+    # wrapper and `claude` no longer cd's into ~/claude first.
+    (lib.hiPrio claudeCmd)
     freshworks
     rebuild
     deploy

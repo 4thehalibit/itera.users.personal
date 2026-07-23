@@ -26,6 +26,7 @@
     ./apps/common/keybinds-cheatsheet.nix # Super+F1 keybind/alias popup
     ./apps/common/personal-commands.nix # fixhdmi, claude, freshworks, deploy, rebuild
     ./apps/common/mango-keybinds.nix # personal mango keybinds (hardware-agnostic)
+    ./apps/common/wezterm.nix # force OpenGL front-end (WebGpu crashes 2nd window on amdgpu)
   ];
 
   # Git identity. No upstream itera battery for this yet, so write ~/.gitconfig
