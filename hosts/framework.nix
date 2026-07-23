@@ -105,6 +105,16 @@
     ];
   };
 
+  # MT7922 Wi-Fi (mt7921e): with power-save at the driver default (ON), the card
+  # silently stalls after a few minutes idle — stays associated but passes no
+  # packets, so NetworkManager logs nothing and only `systemctl restart
+  # NetworkManager` (re-association) restores it. Diagnosed 2026-07-22 from a
+  # journal showing zero NM state-changes between manual restarts. Disabling
+  # power-save fixes it. If stalls ever return despite this, escalate to a PCIe
+  # ASPM workaround (kernel param `pcie_aspm=off`) — but no kernel resets were
+  # seen, so power-save alone is the targeted fix.
+  networking.networkmanager.wifi.powersave = false;
+
   # MT7922 Bluetooth: eiros pinned kernels to dodge a btmtk Oops; the fix was
   # expected upstream. On itera/unstable it is likely already fixed — VERIFY BT
   # after first boot and only pin a kernel here if it regresses (see eiros memory
