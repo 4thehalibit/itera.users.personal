@@ -5,7 +5,7 @@
 # Scope decision: only genuinely personal items are ported from eiros. Shell,
 # terminal, editor and desktop theme adopt itera's defaults (nushell, wezterm,
 # zed, default DMS theme) rather than porting the old eiros customizations.
-{ ... }:
+{ pkgs, ... }:
 {
   imports = [
     # Apps actually used. GUI apps install per-user; CLI/services in their module.
@@ -44,6 +44,14 @@
 
   # Allow vesktop's pinned electron (see apps/common/vesktop.nix note).
   nixpkgs.config.permittedInsecurePackages = [ "electron-40.10.5" ];
+
+  # Clipboard paste dependency. The mango keybind CTRL+SHIFT+V runs
+  # `dms cl paste | wtype -` (see apps/common/mango-keybinds.nix), but the eiros
+  # migration never carried `wtype` over, so paste silently did nothing while
+  # copy worked fine (DMS captures into its own store). `wtype` types the pasted
+  # text into the focused window. `wl-clipboard` adds wl-copy/wl-paste for CLI
+  # clipboard access (already used by apps/common/vonage-directory.nix).
+  environment.systemPackages = with pkgs; [ wtype wl-clipboard ];
 
   # Recurring "DNS down" fix (memory: DNS/DNSSEC). systemd-resolved was rejecting
   # unsigned answers; disable DNSSEC validation. (New option path; the old
