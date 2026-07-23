@@ -34,8 +34,14 @@
     # Home = single VX3211-4K 4K panel; work = two stacked ViewSonics + laptop.
     # NOTE verify DP-10 rotation direction after first boot (eiros `rr:2`).
     programs.mango.monitors = {
-      # Home: single 4K monitor (matched by EDID model, not connector name).
+      # Home: single 4K monitor. mango matches monitorrule by the `name:` token
+      # against the CONNECTOR name, not the EDID model — a model-only rule never
+      # fires (the panel then falls back to scale 1.0 = everything tiny). The
+      # ViewSonic comes up on connector DP-4 (HDMI expansion card). `model` kept
+      # as documentation/extra constraint. If the connector number ever changes
+      # (cards reslotted), update ^DP-4$ — check `wlr-randr`.
       "VX3211-4K" = {
+        name = "^DP-4$";
         model = "VX3211-4K";
         width = 3840;
         height = 2160;
