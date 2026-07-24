@@ -190,9 +190,12 @@ in
       # back to scroller_default_proportion.
       scroller_ignore_proportion_single=0
       scroller_default_proportion_single=1.0
-      # Keep the focused column centered on the panel (active window always in
-      # front of you). Set to 0 if you'd rather columns stay left-anchored.
-      scroller_focus_center=1
+      # Left-anchor columns so they pack edge-to-edge from x=0 and fill the whole
+      # 5120px panel (=0 avoids the centered-focus behavior that parked the active
+      # window mid-screen with dead space on the left and the next column hanging
+      # off the right). PaperWM-style: the row scrolls under a fixed left edge;
+      # SUPER+Left/Right brings off-screen columns into view.
+      scroller_focus_center=0
 
       # popup float rules
       windowrule=isfloating:1,width:960,height:720,appid:keybinds-popup
