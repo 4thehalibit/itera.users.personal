@@ -47,7 +47,11 @@ in
     # Clean slate: drop all itera default keybinds, declare the full set below.
     defaultKeybinds.enable = false;
 
-    layout = "scroller"; # eiros ran scroller on every tag (tagrule id:N,layout_name:scroller)
+    # Default layout: "tile" = auto-sizing master/stack (Hyprland-like — windows
+    # fill the screen automatically, no manual column widths). SUPER+SHIFT+l cycles
+    # to scroller (scrolling), grid, monocle, etc. mango layouts:
+    # tile, scroller, grid, deck, monocle, center_tile, vertical_tile, vertical_scroller.
+    layout = "tile";
 
     keybinds = tagBinds // {
       # --- focus (arrows instead of hjkl) ------------------------------------
@@ -172,11 +176,20 @@ in
 
       # scroller sizing for the 49" ultrawide (5120px wide). mango's built-in
       # default is 0.8 = new windows fill 80% of the screen, which shoves the
-      # previous window off a 5120px panel — that's why it felt un-tileable.
-      # 0.334 = new windows open ~1/3 wide, so THREE sit side by side; SUPER+c
-      # then cycles a column through quarter/third/half/two-thirds/full.
-      scroller_default_proportion=0.334
+      # previous window off a 5120px panel. 0.5 = new windows open half-wide, so
+      # TWO fill the panel exactly and a THIRD overflows into the scrollable row
+      # (SUPER+Left/Right scrolls the focused column into view). SUPER+c cycles a
+      # column through quarter/third/half/two-thirds/full.
+      scroller_default_proportion=0.5
       scroller_proportion_preset=0.25,0.334,0.5,0.667,1.0
+      # Single window auto-fills the whole panel. mango DEFAULTS to ignoring the
+      # single-window proportion (scroller_ignore_proportion_single=1), which
+      # left a lone window stuck at the multi-window 1/3 width (looked like a 17"
+      # monitor). Flip it off so a single window uses the dedicated single
+      # proportion below (=full width); the moment a 2nd window opens they drop
+      # back to scroller_default_proportion.
+      scroller_ignore_proportion_single=0
+      scroller_default_proportion_single=1.0
       # Keep the focused column centered on the panel (active window always in
       # front of you). Set to 0 if you'd rather columns stay left-anchored.
       scroller_focus_center=1
