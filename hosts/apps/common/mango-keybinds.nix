@@ -74,6 +74,18 @@ in
       focus_monitor_up          = { modifierKeys = [ "SUPER" "ALT" ];   flagModifiers = [ "s" ]; keySymbol = "Up";    mangoCommand = "focusmon"; commandArguments = "up"; };
       focus_monitor_down        = { modifierKeys = [ "SUPER" "ALT" ];   flagModifiers = [ "s" ]; keySymbol = "Down";  mangoCommand = "focusmon"; commandArguments = "down"; };
 
+      # --- scroller layout: column width + stacking (ultrawide ergonomics) ---
+      # scroller arranges windows as COLUMNS in a horizontal row; each new window
+      # opens as a column to the right (that's your "side by side"). These control
+      # a column's WIDTH and let you STACK windows vertically inside one column.
+      scroller_width_cycle  = { modifierKeys = [ "SUPER" ];        flagModifiers = [ "s" ]; keySymbol = "c";     mangoCommand = "switch_proportion_preset"; commandArguments = null; };  # cycle focused column width through scroller_proportion_preset
+      scroller_width_full   = { modifierKeys = [ "SUPER" "SHIFT" ];flagModifiers = [ "s" ]; keySymbol = "c";     mangoCommand = "set_proportion";           commandArguments = "1.0"; }; # snap focused column to full width, then SUPER+c to shrink back
+      scroller_stack_left   = { modifierKeys = [ "SUPER" "CTRL" ]; flagModifiers = [ "s" ]; keySymbol = "Left";  mangoCommand = "scroller_stack";           commandArguments = "left"; };
+      scroller_stack_right  = { modifierKeys = [ "SUPER" "CTRL" ]; flagModifiers = [ "s" ]; keySymbol = "Right"; mangoCommand = "scroller_stack";           commandArguments = "right"; };
+      scroller_stack_up     = { modifierKeys = [ "SUPER" "CTRL" ]; flagModifiers = [ "s" ]; keySymbol = "Up";    mangoCommand = "scroller_stack";           commandArguments = "up"; };
+      scroller_stack_down   = { modifierKeys = [ "SUPER" "CTRL" ]; flagModifiers = [ "s" ]; keySymbol = "Down";  mangoCommand = "scroller_stack";           commandArguments = "down"; };
+      cycle_layout          = { modifierKeys = [ "SUPER" "SHIFT" ];flagModifiers = [ "s" ]; keySymbol = "l";     mangoCommand = "switch_layout";            commandArguments = null; };  # flip scroller/tile/grid/monocle to compare
+
       # --- window / session --------------------------------------------------
       close_window              = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "w";      mangoCommand = "killclient";           commandArguments = null; }; # eiros override q -> w
       quit_mangowc              = { modifierKeys = [ "SUPER" "CTRL" ];  flagModifiers = [ "s" ]; keySymbol = "q";      mangoCommand = "quit";                 commandArguments = null; }; # eiros override SHIFT -> CTRL
@@ -112,7 +124,7 @@ in
 
       # --- laptop monitor reposition (home vs office) ------------------------
       monitor_home              = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "h";      mangoCommand = "spawn_shell"; commandArguments = "wlr-randr --output eDP-1 --pos 2560,220"; };
-      monitor_office            = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "o";      mangoCommand = "spawn_shell"; commandArguments = "wlr-randr --output eDP-1 --pos 1920,580"; };
+      monitor_office            = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "o";      mangoCommand = "spawn_shell"; commandArguments = "wlr-randr --output eDP-1 --pos 5120,220"; };
 
       # --- web apps ----------------------------------------------------------
       webapp_chatgpt            = { modifierKeys = [ "SUPER" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "a";      mangoCommand = "spawn"; commandArguments = "vivaldi --app=https://chatgpt.com"; };
@@ -157,6 +169,17 @@ in
       idleinhibit_ignore_visible=1
       edge_scroller_pointer_focus=0
       numlockon=1
+
+      # scroller sizing for the 49" ultrawide (5120px wide). mango's built-in
+      # default is 0.8 = new windows fill 80% of the screen, which shoves the
+      # previous window off a 5120px panel — that's why it felt un-tileable.
+      # 0.334 = new windows open ~1/3 wide, so THREE sit side by side; SUPER+c
+      # then cycles a column through quarter/third/half/two-thirds/full.
+      scroller_default_proportion=0.334
+      scroller_proportion_preset=0.25,0.334,0.5,0.667,1.0
+      # Keep the focused column centered on the panel (active window always in
+      # front of you). Set to 0 if you'd rather columns stay left-anchored.
+      scroller_focus_center=1
 
       # popup float rules
       windowrule=isfloating:1,width:960,height:720,appid:keybinds-popup

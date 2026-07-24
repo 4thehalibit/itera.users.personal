@@ -69,34 +69,36 @@
         y = 0;
         scale = 1.5;
       };
-      # Work: DP-10 on top, rotated; DP-9 below.
-      "DP-10" = {
-        name = "^DP-10$";
-        width = 1920;
-        height = 1080;
-        refresh = 60;
+      # Work: single 49" ZZY XG49DH16C ultrawide (32:9), native 5120x1440@120.
+      # Comes up on connector DP-11 via the USB-C dock (DisplayPort in; the HDMI
+      # cable is unplugged on purpose — a second cable makes the dock emit a
+      # phantom MST output and splits bandwidth). If the connector number ever
+      # changes (dock reslotted / different USB-C port), update ^DP-11$ — check
+      # `wlr-randr`. Panel is ~108 PPI so scale 1.0 is native (no scaling).
+      # NOTE: full 165Hz needs a DIRECT DisplayPort cable into a Framework DP
+      # expansion card (no dock) — the dock's USB-C link caps this at 120Hz.
+      # PBP/PIP (a 2nd machine on the monitor's other input) is a monitor-OSD
+      # feature — no config change needed to switch inputs.
+      "XG49DH16C" = {
+        name = "^DP-11$";
+        model = "XG49DH16C";
+        width = 5120;
+        height = 1440;
+        refresh = 120;
         x = 0;
         y = 0;
         scale = 1;
-        transform = "180"; # eiros rr:2 — CONFIRM visually, may be "90"/"270"
       };
-      "DP-9" = {
-        name = "^DP-9$";
-        width = 1920;
-        height = 1080;
-        refresh = 60;
-        x = 0;
-        y = 1080;
-        scale = 1;
-      };
-      # Laptop panel: default work position (x=1920); SUPER+h moves it for home.
+      # Laptop panel: work position is right of the 5120-wide ultrawide, vertically
+      # centered against its 1440px height ((1440-1000)/2=220). SUPER+h / the home
+      # startup hook below move it to the home position (2560,220).
       "eDP-1" = {
         name = "^eDP-1$";
         width = 2560;
         height = 1600;
         refresh = 165;
-        x = 1920;
-        y = 580;
+        x = 5120;
+        y = 220;
         scale = 1.6;
       };
     };
