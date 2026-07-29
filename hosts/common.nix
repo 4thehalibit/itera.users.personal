@@ -17,6 +17,7 @@
     ./apps/common/vesktop.nix
     ./apps/common/caprine.nix
     ./apps/common/linphone.nix
+    ./apps/common/vlc.nix
     ./apps/common/nautilus.nix
     ./apps/common/dev-tools.nix
 
