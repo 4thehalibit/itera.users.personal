@@ -167,7 +167,17 @@
   # to hanging on the EFI ResetSystem path, made likelier here by the hardened
   # `efi=disable_early_pci_dma`. Force the ACPI reset method instead. Merges with
   # itera's kernelParams (listOf). If a hang recurs, try "reboot=pci"/"reboot=bios".
-  boot.kernelParams = [ "reboot=acpi" ];
+  #
+  # amdgpu.sg_display=0: the external DP-4 monitor flickers white on cursor move,
+  # clearing for a few days after a restart. Root cause is a kernel 7.x amdgpu
+  # regression on the Phoenix APU (Radeon 780M / DCN 3.1): dcn31_program_compbuf_size
+  # hits a REG_WAIT timeout during optimize_bandwidth on atomic commits (cursor
+  # moves reprogram planes), leaving the panel bad for a frame. PSR is already off
+  # (itera base sets amdgpu.dcdebugmask=0x10) so PSR isn't it; dcfeaturemask=0x0 is
+  # reported not to help. Disabling scatter-gather display changes framebuffer
+  # placement and is the most-cited 780M flicker workaround. If it still returns
+  # after a few days, dodge the regression by pinning the 6.12 LTS kernel here.
+  boot.kernelParams = [ "reboot=acpi" "amdgpu.sg_display=0" ];
 
   # MT7922 Bluetooth: eiros pinned kernels to dodge a btmtk Oops; the fix was
   # expected upstream. On itera/unstable it is likely already fixed — VERIFY BT
