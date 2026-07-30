@@ -19,6 +19,7 @@
     ./apps/common/linphone.nix
     ./apps/common/vlc.nix
     ./apps/common/nautilus.nix
+    ./apps/common/eml-viewer.nix # lightweight .eml viewer (renders to browser)
     ./apps/common/dev-tools.nix
 
     # Kept personal automations / tools.
