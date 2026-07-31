@@ -77,6 +77,19 @@
     # Desktop: mango (dwl/wlroots) + DankMaterialShell. mango is opt-in.
     desktop.mango.enable = true;
 
+    # Auto idle: lock after 8 minutes, suspend after 10 (DMS owns idle/lock/
+    # suspend via ~/.config/DankMaterialShell/settings.json; timeouts are in
+    # SECONDS, 0 = never). Same on AC and battery. lockBeforeSuspend also locks
+    # on any suspend path. DMS respects idle-inhibitors, so a Teams/Zoom call or
+    # video playback keeps it awake. Adjust the seconds to change the timeouts.
+    programs.dankMaterialShell.settings = {
+      acLockTimeout = 480;
+      batteryLockTimeout = 480;
+      acSuspendTimeout = 600;
+      batterySuspendTimeout = 600;
+      lockBeforeSuspend = true;
+    };
+
     # Extra home dirs to persist beyond itera's curated set (which already keeps
     # .config/.local/.cache/.ssh/.claude/Documents/Downloads). These two hold
     # data restored from the Ventoy backup by install.sh — without persisting
