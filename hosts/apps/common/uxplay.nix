@@ -6,11 +6,13 @@
 # The flags baked into `airplay` (found by trial on this AMD + mango setup):
 #   -p            pin the legacy fixed ports the firewall opens below (without
 #                 it UxPlay picks random ports the firewall would block)
-#   -avdec        force libav SOFTWARE h264 decode. The auto-selected AMD
-#                 hardware decoder (vah264dec/VAAPI) failed silently -> audio
-#                 played but no video; -avdec is what fixed it.
-#   -vs waylandsink  use the wlroots-native video sink (mango); the default
-#                 autovideosink picked a sink that did not render.
+#   -avdec        force libav SOFTWARE h264 decode (bypasses the AMD hardware
+#                 vah264dec/VAAPI path).
+#   -vs glimagesink  render video via OpenGL/EGL. NOTE: waylandsink (the
+#                 wlroots-native sink) does NOT work here -- mango rejects its
+#                 buffer stride ("[destroyed object]: error 1: Invalid stride"),
+#                 which tore down the session and gave audio-but-no-video. The
+#                 default autovideosink also failed. glimagesink is what works.
 #
 # Discovery uses Avahi (mDNS): UxPlay advertises through avahi-daemon, so
 # publishing must be enabled. The iPhone and this machine must be on the same
@@ -19,7 +21,7 @@
 let
   # airplay: launch the AirPlay receiver with the flags that work on this box.
   airplay = pkgs.writeShellScriptBin "airplay" ''
-    exec ${pkgs.uxplay}/bin/uxplay -p -avdec -vs waylandsink "$@"
+    exec ${pkgs.uxplay}/bin/uxplay -p -avdec -vs glimagesink "$@"
   '';
 in
 {
