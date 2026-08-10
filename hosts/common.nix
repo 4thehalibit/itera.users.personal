@@ -18,7 +18,7 @@
     ./apps/common/caprine.nix
     ./apps/common/linphone.nix
     ./apps/common/vlc.nix
-    ./apps/common/uxplay.nix # AirPlay receiver: iPhone screen-cast to this machine (`uxplay -p`)
+    ./apps/common/uxplay.nix # AirPlay receiver: iPhone screen-cast to this machine (run `airplay`)
     ./apps/common/nautilus.nix
     ./apps/common/eml-viewer.nix # lightweight .eml viewer (renders to browser)
     ./apps/common/dev-tools.nix
