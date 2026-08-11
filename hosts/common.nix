@@ -55,6 +55,15 @@
   # favour of native app paste, so wtype is gone too. See mango-keybinds.nix.
   environment.systemPackages = with pkgs; [ wl-clipboard ];
 
+  # Run Electron/Chromium apps as native Wayland instead of XWayland. This is the
+  # switch teams-for-linux's wrapper gates its screen-share flags on: with
+  # NIXOS_OZONE_WL set it launches with --ozone-platform-hint=auto and
+  # --enable-features=...,WebRTCPipeWireCapturer, so Teams/Vivaldi screen sharing
+  # can reach the wlroots PipeWire screencast portal (xdg-desktop-portal-wlr).
+  # Without it Teams fell back to XWayland and screen share silently did nothing.
+  # sessionVariables apply at login, so log out/in after deploying.
+  environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
   # Recurring "DNS down" fix (memory: DNS/DNSSEC). systemd-resolved was rejecting
   # unsigned answers; disable DNSSEC validation. (New option path; the old
   # services.resolved.dnssec was renamed.)
