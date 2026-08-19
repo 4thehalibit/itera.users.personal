@@ -25,6 +25,16 @@
       url = "github:lcleveland/ninjarmm-ncplayer";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Netskope Client for Linux — the corporate SASE agent. Exposes
+    # nixosModules.default (options: services.netskope.*) plus the packaging.
+    # Work infrastructure, so it is host-scoped: it rides in through specialArgs
+    # and is imported by hosts/apps/framework/netskope.nix, not by the every-host
+    # `modules` list below. Share our nixpkgs.
+    netskope = {
+      url = "github:lcleveland/netskope-client";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -32,6 +42,7 @@
       nixpkgs,
       itera,
       ninjarmm-ncplayer,
+      netskope,
       ...
     }:
     let
@@ -43,8 +54,11 @@
         nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           # Expose the itera flake to host modules so they can select a
-          # nixos-hardware board via `itera.hardwareModules.<board>`.
-          specialArgs = { inherit itera; };
+          # nixos-hardware board via `itera.hardwareModules.<board>`. `netskope`
+          # rides along the same way: importing a flake's module is an
+          # import-time choice, not a `config.*` option, and this one is
+          # framework-only so it must not land in the `modules` list.
+          specialArgs = { inherit itera netskope; };
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default

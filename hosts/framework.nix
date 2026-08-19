@@ -8,6 +8,9 @@
     # Framework-only modules (LED matrix effects, Thunderbolt dock rescan).
     ./apps/framework/kbd-typing-leds.nix
     ./apps/framework/thunderbolt-dock.nix
+    # Corporate SASE client. Framework-only: the tenant is work infrastructure,
+    # so it is scoped to this host rather than living in hosts/common.nix.
+    ./apps/framework/netskope.nix
   ];
 
   itera = {
