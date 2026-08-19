@@ -54,38 +54,39 @@
     # DankMaterialShell provides the StatusNotifier host it registers against.
     enableTray = true;
 
-    # Do NOT start the daemon at boot — deliberately false for the first runs.
+    # Start the daemon at boot. Steering is now the normal state of this host.
     #
-    # Steering works, and that is exactly the risk: the moment the tunnel connects
-    # the client takes over all web traffic. On lcleveland's host that killed
-    # connectivity outright (name resolution failing, sockets timing out), and
-    # recovery meant rebooting into an older generation, because this tenant sets
-    # allowClientDisabling=false so `stAgentCli disable` is refused and the daemon
-    # reinstates its rules on restart.
+    # Know what this commits to: the moment the tunnel connects the client takes
+    # over all web traffic, and this tenant sets allowClientDisabling=false, so
+    # `stAgentCli disable` is refused and the daemon reinstates its rules whenever
+    # it restarts. There is no runtime off-switch worth relying on.
     #
-    # With this false the client is installed, enrolled and dormant. Bring it up
-    # deliberately, when there is time to watch it:
-    #
-    #   systemctl start stagentd     # and stop it the moment the network misbehaves
-    #
-    # Stopping is not as simple as it looks. `systemctl stop` alone does not do it
-    # — its shutdown path does network work that hangs precisely when the network
-    # is down. `kill -s KILL` alone does not either, because the unit is
-    # Restart=always. It is:
+    # So if a boot comes up with the network broken, the recovery path is manual
+    # and worth having memorised BEFORE it is needed. Stopping is not as simple as
+    # it looks: `systemctl stop` alone does not do it, because its shutdown path
+    # does network work that hangs precisely when the network is down, and
+    # `kill -s KILL` alone does not either, because the unit is Restart=always.
+    # Marking it stopping first is what prevents the restart:
     #
     #   systemctl stop --no-block stagentd && systemctl kill -s KILL stagentd
     #
-    # and then undoing the routing by hand, since a killed client cleans up
-    # nothing: `ip rule del fwmark 0x5 table 9`, `ip route flush table 9`,
-    # `ip link del sta0`. netskope-client's tools/steering-test.sh does all of
-    # that on a timer, and is the right way to bring steering up the first time.
+    # A killed client cleans up nothing, so then undo its plumbing by hand:
     #
-    # Extra caution specific to THIS host: the mt7921e wifi stalls every ~15-20
-    # minutes in a state that looks identical to a dead tunnel (associated, no
-    # packets). Do not enable any fail-closed behaviour until that is resolved.
+    #   ip rule del fwmark 0x5 table 9
+    #   ip route flush table 9
+    #   ip link del sta0
     #
-    # Flip to true only after a supervised steering run holds up.
-    autoStart = false;
+    # If that is not enough, boot the previous generation — with autoStart true
+    # the daemon comes back on every boot of THIS one. netskope-client's
+    # tools/steering-test.sh wraps the whole start/probe/back-out cycle in a
+    # dead-man's switch and remains the right way to re-test after any client
+    # version bump or tenant policy change.
+    #
+    # Caution specific to THIS host: the mt7921e wifi stalls every ~15-20 minutes
+    # in a state that looks identical to a dead tunnel (associated, no packets).
+    # Do not enable any fail-closed behaviour until that is resolved, and suspect
+    # the wifi first when steering looks dead on a wireless link.
+    autoStart = true;
 
     # SSL-inspection CA. Netskope MITMs TLS, so once steering is live anything
     # that does not trust this CA gets certificate errors — under steering,
