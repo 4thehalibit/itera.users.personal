@@ -101,14 +101,17 @@
     };
 
     # Extra home dirs to persist beyond itera's curated set (which already keeps
-    # .config/.local/.cache/.ssh/.claude/Documents/Downloads). These two hold
-    # data restored from the Ventoy backup by install.sh — without persisting
-    # them the restored copies would vanish on the first wiped-root boot.
-    #   Pictures — screenshots + saved images
-    #   Vonage   — Linphone contacts CSV/VCF used by the Super+Shift+P popup
-    #              (see apps/common/vonage-directory.nix, which flagged this gap)
+    # .config/.local/.cache/.ssh/.claude/Documents/Downloads/Pictures). This holds
+    # data restored from the Ventoy backup by install.sh — without persisting it
+    # the restored copy would vanish on the first wiped-root boot.
+    #   Vonage — Linphone contacts CSV/VCF used by the Super+Shift+P popup
+    #            (see apps/common/vonage-directory.nix, which flagged this gap)
+    #
+    # Pictures used to be listed here too. itera adopted it into the curated
+    # default set (2026-08-19, core/impermanence.nix), with the same
+    # never-auto-cleared semantics, and environment.persistence asserts on
+    # duplicate directories — so listing it here now fails the build outright.
     impermanence.users.vwestberg.directories = [
-      "Pictures"
       "Vonage"
     ];
 
