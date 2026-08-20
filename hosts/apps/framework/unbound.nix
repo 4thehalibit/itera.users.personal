@@ -110,9 +110,62 @@
       # wrong — it only disables default zone contents, which for `local` do not
       # exist, leaving the leak in place.)
       domain-insecure = "local";
-      local-zone = [ ''"local." static'' ];
+      #
+      # ORDER OF MECHANISMS MATTERS HERE, and it is not intuitive: local-zone is
+      # authoritative local data and is consulted BEFORE any forward-zone. So
+      # `"local." static` alone swallows lselectric.local too and answers NXDOMAIN
+      # in 0ms, silently defeating the forward-zone below (measured). The second,
+      # more specific entry marks AD as `transparent`, which means "no local data
+      # here, carry on with normal resolution" — that is what lets the forward-zone
+      # see the query. Most-specific local-zone wins, so everything else under
+      # `.local` is still answered locally and never leaks.
+      local-zone = [
+        ''"local." static''
+        ''"lselectric.local." transparent''
+      ];
     };
+
+    # Active Directory lives at lselectric.local, reachable only through the
+    # Netskope tunnel. Send it straight at the domain controllers rather than
+    # relying on `netskope-npa-dns` (disabled below), which pushed whatever the
+    # *uplink* handed out — at home that is the Pi-hole, which knows nothing about
+    # lselectric.local.
+    #
+    # These two are `[Domain Controller - ENG]` and `[Domain Controller - CORP]`
+    # from the tenant's App Definition. As private apps they get /32 host routes
+    # into the tunnel while it is up (verified: `ip route get 10.2.75.10 mark 0x5`
+    # -> dev sta0), and both answer over UDP through it (verified against
+    # ls-corp-cluster.lselectric.local). Deliberately NOT forward-tcp-upstream:
+    # the UDP-to-LAN defect that motivated this whole file does not apply here,
+    # because these are tunnelled destinations rather than bypassed LAN ones, and
+    # the DCs' TCP/53 behaved inconsistently in testing.
+    #
+    # More specific than the `local.` local-zone above, and unbound matches
+    # most-specific-first, so this wins for lselectric.local while every other
+    # `.local` name is still answered NXDOMAIN locally and never leaks.
+    #
+    # No forward-first: if the tunnel is down these are simply unreachable, and
+    # falling back to recursion would leak internal hostnames to the root servers
+    # for a guaranteed NXDOMAIN. SERVFAIL is the honest answer.
+    settings.forward-zone = [
+      {
+        name = "lselectric.local.";
+        forward-addr = [
+          "10.2.75.10"
+          "10.10.80.31"
+        ];
+      }
+    ];
   };
+
+  # Disabled: it does the same job worse. The unit reads the *uplink* link's DNS
+  # servers and pushes them onto sta0 as the Private Access resolver, which is only
+  # correct when the uplink resolver happens to be a corporate one — never true
+  # off-prem, which is the only time steering runs. At home it would nominate the
+  # Pi-hole as the AD resolver, and `~local` on sta0 outranks the global `~.`, so it
+  # would also override the forward-zone above. The forward-zone names the domain
+  # controllers explicitly instead, which is what the unit was reaching for.
+  systemd.services.netskope-npa-dns.enable = false;
 
   # Resolved stays in front of unbound rather than being replaced. It is worth
   # keeping: `resolvectl` is what netskope-npa-dns is built on (it routes `.local`
