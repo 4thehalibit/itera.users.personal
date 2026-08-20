@@ -54,9 +54,39 @@
     # DankMaterialShell provides the StatusNotifier host it registers against.
     enableTray = true;
 
-    # Start the daemon at boot. Steering is now the normal state of this host.
+    # Do NOT start the daemon at boot. Set false on 2026-08-20 after the first
+    # boot that actually steered took the network down at home.
     #
-    # Know what this commits to: the moment the tunnel connects the client takes
+    # What was learned that day, because it inverts the earlier reading of this
+    # host: steering had never been exercised anywhere. The tenant runs
+    # on-premises detection against http://10.20.100.254/#connection and
+    # http://10.10.0.1/#connection. At the office those answer 200, the client
+    # marks itself on-prem, and Internet Security stays Disabled, so it stands
+    # down and does nothing. Every healthy-looking day at work was that, not a
+    # working tunnel. Off-prem both probes fail, steering engages for real, and
+    # on this host all name resolution dies within ~25s (getaddrinfo err 11,
+    # EAI_AGAIN). That cascades: the client cannot resolve gateway.npa.goskope.com,
+    # GSLB fetches time out, the steering config / exception list / bypass list
+    # downloads all fail with Error -2, and the tunnel finally drops with
+    # "Tunnel Down Due to SSL Error". Evidence is in app/eventcache.json and
+    # app/logs/{nsdebuglog,npadebuglog}.log under statePath, which persist.
+    #
+    # Ruled out, so nobody re-treads them: home-subnet overlap (the exception list
+    # bypasses 192.168.0.0-192.168.255.255, 10/8 and 172.16/12 outright, and home
+    # is 192.168.4.0/22); DNSSEC (resolved.conf is byte-identical between the
+    # working and broken generations); and the LAN resolver mishandling goskope.com
+    # (192.168.4.46 resolves every Netskope endpoint correctly).
+    #
+    # Still open: the exact drop mechanism. The DrvConfig line reports
+    # `supportUDPExceptions disabled`, so the LAN bypass may not cover UDP 53, and
+    # the logs are full of `nsRtNetLink ipRouteGet: failed to get response`,
+    # meaning the client's own rtnetlink calls fail and its bypass routes may never
+    # install. rpfilter is already --validmark --loose, so it is a weaker suspect
+    # than it looks. Settle it with tools/steering-test.sh (see below) rather than
+    # from logs, then revisit turning this back on.
+    #
+    # Know what flipping this back to true commits to: the moment the tunnel
+    # connects the client takes
     # over all web traffic, and this tenant sets allowClientDisabling=false, so
     # `stAgentCli disable` is refused and the daemon reinstates its rules whenever
     # it restarts. There is no runtime off-switch worth relying on.
@@ -76,17 +106,20 @@
     #   ip route flush table 9
     #   ip link del sta0
     #
-    # If that is not enough, boot the previous generation — with autoStart true
-    # the daemon comes back on every boot of THIS one. netskope-client's
-    # tools/steering-test.sh wraps the whole start/probe/back-out cycle in a
-    # dead-man's switch and remains the right way to re-test after any client
-    # version bump or tenant policy change.
+    # With autoStart false a bad run costs one command rather than a reboot into
+    # an older generation, which is the whole reason it is false. netskope-client's
+    # tools/steering-test.sh wraps the start/probe/back-out cycle in a dead-man's
+    # switch and is the right way to test here and after any client version bump or
+    # tenant policy change. Its icmp probe is the one to watch: ping surviving while
+    # dns and tcp die means the return path is being dropped, not the link.
     #
     # Caution specific to THIS host: the mt7921e wifi stalls every ~15-20 minutes
     # in a state that looks identical to a dead tunnel (associated, no packets).
     # Do not enable any fail-closed behaviour until that is resolved, and suspect
-    # the wifi first when steering looks dead on a wireless link.
-    autoStart = true;
+    # the wifi first when steering looks dead on a wireless link. Note the tenant
+    # already has it on: nsuser.conf carries "failCloseStatus": "true", which is
+    # worth raising with the L&S Netskope admin alongside the off-prem failure.
+    autoStart = false;
 
     # SSL-inspection CA. Netskope MITMs TLS, so once steering is live anything
     # that does not trust this CA gets certificate errors — under steering,
