@@ -11,6 +11,9 @@
     # Corporate SASE client. Framework-only: the tenant is work infrastructure,
     # so it is scoped to this host rather than living in hosts/common.nix.
     ./apps/framework/netskope.nix
+    # Local caching resolver. Framework-only: it exists to survive this host's
+    # steering (LAN DNS over TCP, never UDP) and its travel between networks.
+    ./apps/framework/unbound.nix
   ];
 
   itera = {
