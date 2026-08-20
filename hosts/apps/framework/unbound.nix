@@ -188,7 +188,15 @@
     # domains. Per-link DNS stays *visible* to resolvectl (which netskope-npa-dns
     # needs) while being unused for ordinary lookups. `~local` on sta0 has more
     # labels than `.`, so Private Access split-horizon still beats this.
-    Domains = [ "~." ];
+    #
+    # `lselectric.local` (no `~`) is a *search* domain, not just a routing one.
+    # Without it `search .` is the only suffix list, so resolved refuses every
+    # single-label name outright ("No appropriate name servers or networks for
+    # name found") and bare corporate hostnames like `ls-corp-hycu` fail while
+    # `ls-corp-hycu.lselectric.local` resolves fine. Two labels beats sta0's
+    # `~local`, which is the same precedence the forward-zone above already
+    # relies on, so Private Access split-horizon is unaffected.
+    Domains = [ "~." "lselectric.local" ];
 
     # Kill the compiled-in fallback list (1.1.1.1/8.8.8.8/9.9.9.9). Those are
     # reached over UDP and would be a silent bypass of everything above.
