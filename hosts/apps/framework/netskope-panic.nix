@@ -33,18 +33,24 @@ let
   # gets restarted (Restart=always). Marking it stopping first is what prevents that.
   netskopeOff = pkgs.writeShellScriptBin "netskope-off" ''
     set -u
+    # Every binary the script uses, spelled out. getent is glibc (NOT coreutils) and
+    # grep is gnugrep; leaving either out fails only on the DNS-verification and
+    # rule-cleanup paths, i.e. exactly when this script is being relied on.
     PATH=${
       pkgs.lib.makeBinPath [
         pkgs.systemd
         pkgs.iproute2
         pkgs.coreutils
         pkgs.util-linux
+        pkgs.gnugrep
+        pkgs.getent
       ]
     }
 
     if [ "$(id -u)" != 0 ]; then
-      # Re-exec as root. Falls back to an interactive prompt if no NOPASSWD rule.
-      exec sudo "$0" "$@"
+      # sudo is a setuid wrapper, not a package binary, so it is never on a
+      # makeBinPath PATH and must be called by absolute path.
+      exec ${config.security.wrapperDir}/sudo "$0" "$@"
     fi
 
     echo "==> Turning Netskope OFF"
@@ -113,13 +119,17 @@ let
     PATH=${
       pkgs.lib.makeBinPath [
         pkgs.systemd
+        pkgs.iproute2
         pkgs.coreutils
         pkgs.util-linux
+        pkgs.gnugrep
+        pkgs.getent
       ]
     }
 
     if [ "$(id -u)" != 0 ]; then
-      exec sudo "$0" "$@"
+      # See netskope-off: sudo is a setuid wrapper, absolute path required.
+      exec ${config.security.wrapperDir}/sudo "$0" "$@"
     fi
 
     echo "==> Turning Netskope ON"
