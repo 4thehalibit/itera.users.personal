@@ -54,8 +54,10 @@
     # DankMaterialShell provides the StatusNotifier host it registers against.
     enableTray = true;
 
-    # Do NOT start the daemon at boot. Set false on 2026-08-20 after the first
-    # boot that actually steered took the network down at home.
+    # Start at boot. Was false for part of 2026-08-20, after the first boot that
+    # actually steered took the network down at home; set back to true the same day
+    # once the cause was found and fixed. Read the next three paragraphs before
+    # touching this, because the safety of `true` is conditional on that fix.
     #
     # What was learned that day, because it inverts the earlier reading of this
     # host: steering had never been exercised anywhere. The tenant runs
@@ -77,13 +79,28 @@
     # working and broken generations); and the LAN resolver mishandling goskope.com
     # (192.168.4.46 resolves every Netskope endpoint correctly).
     #
-    # Still open: the exact drop mechanism. The DrvConfig line reports
-    # `supportUDPExceptions disabled`, so the LAN bypass may not cover UDP 53, and
-    # the logs are full of `nsRtNetLink ipRouteGet: failed to get response`,
-    # meaning the client's own rtnetlink calls fail and its bypass routes may never
-    # install. rpfilter is already --validmark --loose, so it is a weaker suspect
-    # than it looks. Settle it with tools/steering-test.sh (see below) rather than
-    # from logs, then revisit turning this back on.
+    # SOLVED 2026-08-20, and this is why `true` is safe again. The client reads the
+    # uplink's resolver out of systemd-resolved and installs a /32 host route for it
+    # pointing into the tunnel. That /32 beats the LAN bypass on longest-prefix
+    # match, so DNS to a LAN resolver is steered to a POP that cannot route RFC1918
+    # and is blackholed:
+    #
+    #   192.168.4.46      dev sta0 scope link metric 100        <- /32, wins
+    #   192.168.0.0/16    via 192.168.4.1 dev eth0 metric 100   <- bypass, loses
+    #
+    # Only marked UDP is affected; unmarked TCP to the same host is untouched, which
+    # is why it presented as "all DNS dead, everything else fine". rpfilter is ruled
+    # out (TCP and ICMP stayed up through the whole outage), as is private app scope
+    # (tested with a user-scoped steering config excluding [DNS - AD Domain]).
+    #
+    # The fix is hosts/apps/framework/unbound.nix: a local recursive resolver on
+    # 127.0.0.1, with resolved pinned to it via Domains=~.. The client still installs
+    # its /32 — it becomes `127.0.0.1 dev sta0` — but that is inert, because rule
+    # priority 0 (`lookup local`) always matches loopback before the fwmark rule at
+    # priority 1 ever sees it. A loopback resolver is somewhere this defect
+    # structurally cannot reach. Verified with a 120s steering run: dns=1 throughout
+    # and TLSca=1 from t+17s, i.e. tunnel up and inspecting while the host stays
+    # usable. So: do NOT move DNS back onto a LAN address on this host.
     #
     # Know what flipping this back to true commits to: the moment the tunnel
     # connects the client takes
@@ -107,7 +124,9 @@
     #   ip link del sta0
     #
     # With autoStart false a bad run costs one command rather than a reboot into
-    # an older generation, which is the whole reason it is false. netskope-client's
+    # an older generation, which is why it is the right setting whenever the DNS
+    # path above is in doubt — after a client version bump, a tenant policy change,
+    # or any change to unbound.nix. netskope-client's
     # tools/steering-test.sh wraps the start/probe/back-out cycle in a dead-man's
     # switch and is the right way to test here and after any client version bump or
     # tenant policy change. Its icmp probe is the one to watch: ping surviving while
@@ -119,7 +138,7 @@
     # the wifi first when steering looks dead on a wireless link. Note the tenant
     # already has it on: nsuser.conf carries "failCloseStatus": "true", which is
     # worth raising with the L&S Netskope admin alongside the off-prem failure.
-    autoStart = false;
+    autoStart = true;
 
     # SSL-inspection CA. Netskope MITMs TLS, so once steering is live anything
     # that does not trust this CA gets certificate errors — under steering,
