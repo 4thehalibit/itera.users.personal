@@ -14,6 +14,9 @@
     # Local caching resolver. Framework-only: it exists to survive this host's
     # steering (LAN DNS over TCP, never UDP) and its travel between networks.
     ./apps/framework/unbound.nix
+    # One-click kill switch for the SASE client, for when a bad tunnel takes the
+    # network down and the four-command teardown is not what you want to recall.
+    ./apps/framework/netskope-panic.nix
   ];
 
   itera = {
