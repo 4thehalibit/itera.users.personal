@@ -21,6 +21,7 @@
     ./apps/common/uxplay.nix # AirPlay receiver: iPhone screen-cast to this machine (run `airplay`)
     ./apps/common/nautilus.nix
     ./apps/common/eml-viewer.nix # lightweight .eml viewer (renders to browser)
+    ./apps/common/phisher-triage.nix # `phisher` PhishER triage CLI (~/Documents/phisher-triage)
     ./apps/common/dev-tools.nix
 
     # Kept personal automations / tools.
