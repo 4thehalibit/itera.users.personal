@@ -219,4 +219,30 @@
     "+${config.systemd.package}/bin/resolvectl reset-server-features"
     "+${config.systemd.package}/bin/resolvectl flush-caches"
   ];
+
+  # The mirror image of the above, and the failure it fixes is much easier to
+  # misread as "the cluster is down". unbound starts at the same second as the
+  # Netskope daemon and roughly 30s before the tunnel is actually bound, so its
+  # outgoing sockets and its infra cache are both older than the steering they
+  # depend on. Every forward to a domain controller then goes out over the uplink
+  # instead of sta0, gets dropped by the gateway, and the whole lselectric.local
+  # forward-zone answers SERVFAIL while the DCs themselves answer fine when asked
+  # directly. Diagnosed 2026-08-28 against ls-pcs-cluster.lselectric.local:
+  #
+  #   host ... 10.2.75.10   -> 100.64.0.2    <- DC answers
+  #   host ... 127.0.0.1    -> SERVFAIL      <- unbound cannot reach the same DC
+  #   tcp 9440 -> 100.64.0.2                 <- and the target was up the whole time
+  #
+  # `systemctl restart unbound` fixes it, which is the tell that this is socket and
+  # cache state rather than routing. The rebind unit is BindsTo=sta0.device and
+  # Type=notify, so its ExecStartPost is the exact moment the tunnel is usable, and
+  # it fires again on every uplink change - which happens several times a day on a
+  # laptop, and re-broke it each time before this.
+  #
+  # try-restart, not restart: a no-op if unbound is stopped, rather than starting it
+  # out of order. --no-block is load-bearing, not tidiness: a synchronous systemctl
+  # call from inside another unit's ExecStartPost can deadlock on the job queue.
+  systemd.services.netskope-tunnel-rebind.serviceConfig.ExecStartPost = [
+    "${config.systemd.package}/bin/systemctl --no-block try-restart unbound.service"
+  ];
 }

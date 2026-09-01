@@ -1,8 +1,10 @@
 # Framework 16 keyboard backlight + LED-matrix typing effects. Ported from eiros
-# applications/kbd_typing_leds.nix, with an added runtime ON/OFF toggle
-# (Super+Shift+L). The service honours an enable-flag file; the toggle script
-# flips it. The flag lives in the service's world-writable RuntimeDirectory, so
-# the toggle needs no root.
+# applications/kbd_typing_leds.nix, with a runtime ON/OFF flag. The service
+# honours an enable-flag file; SUPER+F7 walks the brightness ramp down and off,
+# SUPER+F8 walks it back up. The flag lives in the service's world-writable
+# RuntimeDirectory, so no root is needed. `kbd-leds-toggle` still flips it
+# directly from a shell; it has no keybind (SUPER+SHIFT+L belongs to
+# cycle_layout in apps/common/mango-keybinds.nix).
 { pkgs, ... }:
 let
   inputmodule = pkgs.inputmodule-control;
@@ -12,14 +14,31 @@ let
   enabledFile = "/run/kbd-leds/enabled";
   defaultBrightness = 40;
 
+  # Stepping down past the dimmest level (5) turns the effects OFF; stepping up
+  # from off turns them back on at that dimmest level. So F7/F8 walk a single
+  # ramp: off <-> 5 <-> 15 <-> ... <-> 100.
   brightnessDown = pkgs.writeShellScriptBin "kbd-brightness-down" ''
+    f=${enabledFile}
+    # Already off - nothing below off.
+    [ "$(cat "$f" 2>/dev/null)" = "0" ] && exit 0
     val=$(cat ${brightnessFile} 2>/dev/null || echo ${toString defaultBrightness})
+    if [ "$val" -le 5 ]; then
+      echo 0 > "$f"
+      exit 0
+    fi
     val=$(( val - 10 ))
     [ $val -lt 5 ] && val=5
     echo $val > ${brightnessFile}
   '';
 
   brightnessUp = pkgs.writeShellScriptBin "kbd-brightness-up" ''
+    f=${enabledFile}
+    # Coming back from off - re-enable at the dimmest level.
+    if [ "$(cat "$f" 2>/dev/null)" = "0" ]; then
+      echo 5 > ${brightnessFile}
+      echo 1 > "$f"
+      exit 0
+    fi
     val=$(cat ${brightnessFile} 2>/dev/null || echo ${toString defaultBrightness})
     val=$(( val + 10 ))
     [ $val -gt 100 ] && val=100
@@ -230,6 +249,5 @@ in
   itera.users.vwestberg.programs.mango.keybinds = {
     kbd_brightness_down = { modifierKeys = [ "SUPER" ]; flagModifiers = [ "s" ]; keySymbol = "F7"; mangoCommand = "spawn_shell"; commandArguments = "kbd-brightness-down"; };
     kbd_brightness_up = { modifierKeys = [ "SUPER" ]; flagModifiers = [ "s" ]; keySymbol = "F8"; mangoCommand = "spawn_shell"; commandArguments = "kbd-brightness-up"; };
-    kbd_leds_toggle = { modifierKeys = [ "SUPER" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "l"; mangoCommand = "spawn_shell"; commandArguments = "kbd-leds-toggle"; };
   };
 }

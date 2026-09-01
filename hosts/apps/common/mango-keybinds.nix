@@ -140,8 +140,9 @@ in
       vonage_directory          = { modifierKeys = [ "SUPER" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "p";      mangoCommand = "spawn"; commandArguments = "wezterm start --class vonage-directory -- vonage-directory-popup"; };
 
       # --- keyboard LED matrix brightness (was dropped in the prior port) ----
-      kbd_brightness_down       = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "F7";     mangoCommand = "spawn_shell"; commandArguments = "kbd-brightness-down"; };
-      kbd_brightness_up         = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "F8";     mangoCommand = "spawn_shell"; commandArguments = "kbd-brightness-up"; };
+      # kbd_brightness_down/up live with the hardware in apps/framework/kbd-typing-leds.nix.
+      # Declaring them here too made the module concat both definitions into a
+      # malformed "bindss=SUPER+SUPER,F7" line, so neither key worked.
 
       # --- media / brightness hardware keys (XF86) ---------------------------
       volume_up                 = { modifierKeys = [ ]; flagModifiers = [ "s" ]; keySymbol = "XF86AudioRaiseVolume"; mangoCommand = "spawn_shell"; commandArguments = "pactl set-sink-volume @DEFAULT_SINK@ +5%"; };
