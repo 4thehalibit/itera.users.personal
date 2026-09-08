@@ -11,6 +11,10 @@
 # precisely so a non-root eval can read it.
 #
 #   flake-news   print the latest report
+#
+# The dank-bar pill for the same report lives in ./dms-flake-news (registered
+# below). Its widget id has to appear in a bar config's widget list too — that
+# layout is in ../../common.nix next to the other DMS settings.
 { pkgs, ... }:
 let
   user = "vwestberg";
@@ -171,6 +175,11 @@ in
     checkScript
     flakeNews
   ];
+
+  # Dank-bar pill reading ${reportFile}. The attr name must match the `id` in
+  # plugin.json — DMS looks its enabled flag up by manifest id, so a mismatch
+  # ships the plugin but leaves it off.
+  itera.programs.dankMaterialShell.plugins.flakeNews.src = ./dms-flake-news;
 
   systemd.user.services.flake-update-check = {
     description = "Check upstream flake inputs for changes (reports only, applies nothing)";

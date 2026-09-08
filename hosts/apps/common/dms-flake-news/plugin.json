@@ -1,0 +1,14 @@
+{
+  "id": "flakeNews",
+  "name": "Flake News",
+  "description": "Dank bar indicator for the weekly itera flake-update-check report. Shows whether upstream inputs have moved and whether the updated config still evaluates.",
+  "version": "1.0.0",
+  "author": "Vincent Westberg",
+  "icon": "newspaper",
+  "type": "widget",
+  "capabilities": [
+    "dankbar-widget"
+  ],
+  "component": "./FlakeNewsWidget.qml",
+  "requires_dms": ">=1.5.0"
+}

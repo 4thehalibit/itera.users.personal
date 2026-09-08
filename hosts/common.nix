@@ -100,6 +100,50 @@
       acSuspendTimeout = 600;
       batterySuspendTimeout = 600;
       lockBeforeSuspend = true;
+
+      # Bar layout. itera ships this list as an mkDefault, and it is one whole
+      # value rather than a merged attrset, so adding a single widget means
+      # restating the layout here. Kept identical to itera's default apart from
+      # the two additions below.
+      #
+      #   idleInhibitor  click-to-toggle caffeine — the timeouts above suspend
+      #                  mid-presentation otherwise. DMS honours idle-inhibitors
+      #                  from Teams/Zoom automatically, but a slide deck in a
+      #                  browser tab does not take one, which is exactly the
+      #                  case this covers.
+      #   flakeNews      upstream flake-input report (apps/common/flake-update-check.nix)
+      barConfigs = [
+        {
+          id = "default";
+          name = "Main Bar";
+          enabled = true;
+          position = 0;
+          screenPreferences = [ "all" ];
+          showOnLastDisplay = true;
+          leftWidgets = [
+            "launcherButton"
+            "workspaceSwitcher"
+            "focusedWindow"
+          ];
+          centerWidgets = [
+            "music"
+            "clock"
+            "weather"
+          ];
+          rightWidgets = [
+            "systemTray"
+            "clipboard"
+            "cpuUsage"
+            "memUsage"
+            "ipIndicator"
+            "flakeNews"
+            "idleInhibitor"
+            "notificationButton"
+            "battery"
+            "controlCenterButton"
+          ];
+        }
+      ];
     };
 
     # Extra home dirs to persist beyond itera's curated set (which already keeps
