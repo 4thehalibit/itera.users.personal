@@ -31,6 +31,7 @@
     ./apps/common/personal-commands.nix # fixhdmi, claude, freshworks, deploy, rebuild
     ./apps/common/mango-keybinds.nix # personal mango keybinds (hardware-agnostic)
     ./apps/common/wezterm.nix # force OpenGL front-end (WebGpu crashes 2nd window on amdgpu)
+    ./apps/common/flake-update-check.nix # weekly upstream flake check + `flake-news`
   ];
 
   # Git identity. No upstream itera battery for this yet, so write ~/.gitconfig
