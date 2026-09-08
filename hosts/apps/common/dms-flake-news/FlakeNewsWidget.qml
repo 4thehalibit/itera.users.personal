@@ -11,6 +11,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Common
+import qs.Services
 import qs.Widgets
 import qs.Modules.Plugins
 
@@ -56,6 +57,12 @@ PluginComponent {
             error: Theme.error
         })[state]
 
+    // "itera flake update check — 2026-09-08 12:20 CDT" — the report's header.
+    readonly property string checkedAt: {
+        const m = /— (.+)$/m.exec(report.split("\n")[0] || "");
+        return m ? m[1] : "";
+    }
+
     readonly property string tooltip: ({
             none: "No flake check has run yet",
             ok: "Flake inputs up to date",
@@ -72,9 +79,15 @@ PluginComponent {
         onLoadFailed: root.report = ""
     }
 
-    // Right click re-runs the check instead of waiting for Monday. The unit is
-    // a oneshot, so a second click while it runs is a no-op.
-    pillRightClickAction: () => Quickshell.execDetached(["systemctl", "--user", "start", "flake-update-check"])
+    // A clean check rewrites the report with identical text apart from its
+    // timestamp, so without a toast a manual run looks like a dead button.
+    // The unit is a oneshot; a second trigger while it runs is a no-op.
+    function runCheck() {
+        Quickshell.execDetached(["systemctl", "--user", "start", "flake-update-check"]);
+        ToastService.showInfo("Checking flake inputs…", "Takes a few seconds. The pill updates itself.");
+    }
+
+    pillRightClickAction: () => root.runCheck()
 
     horizontalBarPill: Component {
         Row {
@@ -110,7 +123,7 @@ PluginComponent {
             id: popout
 
             headerText: "Flake News"
-            detailsText: root.tooltip
+            detailsText: root.checkedAt ? root.tooltip + " · checked " + root.checkedAt : root.tooltip
             showCloseButton: true
 
             // Re-run the check without waiting for Monday, same as a right
@@ -121,7 +134,7 @@ PluginComponent {
                     iconName: "refresh"
                     iconColor: Theme.surfaceVariantText
                     tooltipText: "Check now"
-                    onClicked: Quickshell.execDetached(["systemctl", "--user", "start", "flake-update-check"])
+                    onClicked: root.runCheck()
                 }
             }
 
