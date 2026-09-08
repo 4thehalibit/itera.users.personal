@@ -72,11 +72,16 @@ PluginComponent {
         })[state]
 
     FileView {
+        id: reportFile
         path: root.reportPath
         watchChanges: true
         printErrors: false
         onLoaded: root.report = text()
         onLoadFailed: root.report = ""
+        // watchChanges only reports that the file moved; the re-read is ours to
+        // ask for. Without this the pill keeps its first read forever and a
+        // manual check looks like it did nothing.
+        onFileChanged: reload()
     }
 
     // A clean check rewrites the report with identical text apart from its
