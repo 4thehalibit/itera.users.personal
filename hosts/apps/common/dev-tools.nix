@@ -5,6 +5,7 @@
   environment.systemPackages = with pkgs; [
     gh
     python3
+    nodejs # ponytail/caveman Claude Code plugin lifecycle hooks (needs node >=18)
     platformio-core
     gnumake
     nixfmt
