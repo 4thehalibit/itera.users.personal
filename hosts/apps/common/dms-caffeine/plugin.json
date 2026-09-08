@@ -1,0 +1,14 @@
+{
+  "id": "caffeine",
+  "name": "Caffeine",
+  "description": "Coffee-cup idle inhibitor. Same SessionService toggle as DMS's built-in idleInhibitor widget, with a legible icon.",
+  "version": "1.0.0",
+  "author": "Vincent Westberg",
+  "icon": "local_cafe",
+  "type": "widget",
+  "capabilities": [
+    "dankbar-widget"
+  ],
+  "component": "./CaffeineWidget.qml",
+  "requires_dms": ">=1.5.0"
+}

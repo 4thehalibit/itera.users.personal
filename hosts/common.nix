@@ -106,11 +106,15 @@
       # restating the layout here. Kept identical to itera's default apart from
       # the two additions below.
       #
-      #   idleInhibitor  click-to-toggle caffeine — the timeouts above suspend
-      #                  mid-presentation otherwise. DMS honours idle-inhibitors
-      #                  from Teams/Zoom automatically, but a slide deck in a
-      #                  browser tab does not take one, which is exactly the
-      #                  case this covers.
+      #   caffeine       click-to-toggle idle inhibitor — the timeouts above
+      #                  suspend mid-presentation otherwise. DMS honours
+      #                  idle-inhibitors from Teams/Zoom automatically, but a
+      #                  slide deck in a browser tab does not take one, which is
+      #                  exactly the case this covers. Replaces DMS's built-in
+      #                  `idleInhibitor` purely for the icon (see the plugin dir
+      #                  registered below); the toggle underneath is the same
+      #                  SessionService call, so this pill, the Control Center
+      #                  tile and `dms ipc call inhibit toggle` stay in sync.
       #   flakeNews      upstream flake-input report (apps/common/flake-update-check.nix)
       barConfigs = [
         {
@@ -137,7 +141,7 @@
             "memUsage"
             "ipIndicator"
             "flakeNews"
-            "idleInhibitor"
+            "caffeine"
             "notificationButton"
             "battery"
             "controlCenterButton"
@@ -145,6 +149,11 @@
         }
       ];
     };
+
+    # Coffee-cup idle inhibitor referenced by barConfigs above. Attr name must
+    # match the `id` in its plugin.json — DMS looks the enabled flag up by
+    # manifest id.
+    programs.dankMaterialShell.plugins.caffeine.src = ./apps/common/dms-caffeine;
 
     # Extra home dirs to persist beyond itera's curated set (which already keeps
     # .config/.local/.cache/.ssh/.claude/Documents/Downloads/Pictures). This holds
