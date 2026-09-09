@@ -116,6 +116,8 @@ let
 
   netskopeOn = pkgs.writeShellScriptBin "netskope-on" ''
     set -u
+    # curl is here for the enforcement probe at the end, and is as load-bearing as
+    # the rest: without it the script goes back to claiming success it never checked.
     PATH=${
       pkgs.lib.makeBinPath [
         pkgs.systemd
@@ -124,6 +126,7 @@ let
         pkgs.util-linux
         pkgs.gnugrep
         pkgs.getent
+        pkgs.curl
       ]
     }
 
@@ -134,19 +137,66 @@ let
 
     echo "==> Turning Netskope ON"
     rm -f ${flag}
-    systemctl start stagentd || true
+
+    # restart, NOT start. `start` is a no-op on an already-active unit, which is the
+    # common case: the daemon can be running while steering is not actually engaged
+    # (a failed steering-config download leaves it up but enforcing nothing, and a
+    # firewall.service restart flushes the rules it installed out from under it).
+    # `start` then prints "active" and changes nothing, which is precisely the
+    # "netskope-on did nothing" failure this script exists to prevent. A restart
+    # rebuilds the plumbing unconditionally.
+    systemctl restart stagentd || true
     echo "  daemon: $(systemctl is-active stagentd 2>&1)"
 
     # The daemon alone never builds a tunnel: with no per-user agent registered it
     # has no active user session. The tray units are what give it one.
+    probe_user=""
     for u in $(loginctl list-users --no-legend 2>/dev/null | ${pkgs.gawk}/bin/awk '$2 != "root" { print $1 }'); do
       name=$(loginctl show-user "$u" -p Name --value 2>/dev/null || true)
       [ -n "$name" ] || continue
+      probe_user="$name"
       runuser -u "$name" -- env XDG_RUNTIME_DIR="/run/user/$u" \
         DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$u/bus" \
         systemctl --user start stagentapp stagentui 2>/dev/null || true
     done
-    echo "  tunnel comes up within ~10s; check with: ip -br link show sta0"
+
+    # Verify enforcement instead of asserting it. TLS to a bare IP is the right probe:
+    # under steering the cert is reissued by the tenant CA
+    # (CN=ns-swg.ca.lselectric.goskope.com), so a goskope.com issuer means traffic is
+    # genuinely being intercepted. Deliberately NOT a fetch of a blocked category --
+    # that would work too, but it files an Acceptable Use Policy violation against the
+    # user in the Netskope console every single time the script runs.
+    #
+    # Probe as the desktop user, not root: root has no session and its traffic is not
+    # a representative sample of what the browser will get.
+    probe() {
+      if [ -n "$probe_user" ]; then
+        runuser -u "$probe_user" -- curl -sv --max-time 5 https://1.1.1.1 -o /dev/null 2>&1
+      else
+        curl -sv --max-time 5 https://1.1.1.1 -o /dev/null 2>&1
+      fi
+    }
+
+    echo "  waiting for steering to engage..."
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+      if probe | grep -qi "issuer:.*goskope.com"; then
+        echo "  ENFORCEMENT VERIFIED after $((i * 3))s (TLS reissued by tenant CA)"
+        echo
+        echo "Netskope is ON and enforcing."
+        echo "NOTE: an already-open browser may still serve cached pages or reuse a"
+        echo "      connection opened before steering engaged, which looks exactly like"
+        echo "      Netskope being off. Hard-reload (Ctrl+Shift+R) or restart it."
+        exit 0
+      fi
+      sleep 3
+    done
+
+    echo
+    echo "Netskope is running but steering did NOT engage within 30s."
+    echo "  sta0=$(ip -o link show sta0 2>/dev/null | wc -l) table9=$(ip route show table 9 2>/dev/null | wc -l)"
+    echo "Check: journalctl -u stagentd -n 50"
+    echo "  and: grep -iE 'steering|tunnel' /opt/netskope/stagent/logs/nsdebuglog.log | tail -20"
+    exit 1
   '';
 
   # The bit that runs inside the terminal window: do the teardown, then hold the
