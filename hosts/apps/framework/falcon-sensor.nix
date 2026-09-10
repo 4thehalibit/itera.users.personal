@@ -106,10 +106,16 @@
     tray = {
       enable = true;
 
-      # Custom icons: a bird badged with the sensor's state, in the Astros
-      # palette's semantic colours (see hosts/apps/common/astros-theme.json) so
-      # they sit on the navy bar rather than fighting it. Upstream draws a
-      # coloured shield.
+      # Custom icons: one full-bleed crow, recoloured per state from the Astros
+      # palette's semantic set (see hosts/apps/common/astros-theme.json) so it
+      # sits on the navy bar rather than fighting it. Upstream draws a coloured
+      # shield with a state glyph on it.
+      #
+      # STATE IS COLOUR ONLY, deliberately. A badged version came first and was
+      # scrapped: the badge ate about 40% of a 22px canvas to repeat what the
+      # colour already said, and the bird left over was too small to read. See
+      # ./falcon-icons/render-icons.py for the colour-blindness trade-off that
+      # buys, and the shape-based fix if it ever matters.
       #
       # The mark is Font Awesome Free 7's `crow`, which is CC BY 4.0
       # (https://fontawesome.com/license/free) — ATTRIBUTION REQUIRED, and it is
