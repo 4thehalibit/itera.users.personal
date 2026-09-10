@@ -90,8 +90,33 @@
 
       # No forward-zone at all: this is a full recursive resolver, talking to the
       # root servers and down. That is what makes it behave the same on every
-      # network. Recursion goes out over UDP to public addresses, which the matrix
-      # above proves is the half of steering that works.
+      # network.
+
+      # Recurse over TCP, not UDP. The matrix above recorded `udp 53 -> 1.1.1.1 OK`
+      # on 2026-08-20; that is no longer true. Re-measured 2026-09-10 under live
+      # steering, UDP/53 to Cloudflare address space is now dropped, while TCP/53 to
+      # the same addresses is untouched:
+      #
+      #   udp 53 -> 162.159.60.1   TIMEOUT   <- blue.foundationdns.com, authoritative
+      #   tcp 53 -> 162.159.60.1   OK          for crowdstrike.com
+      #   udp 53 -> 1.1.1.1        TIMEOUT   <- was OK in the 2026-08-20 matrix
+      #   tcp 53 -> 1.1.1.1        OK
+      #   udp 53 -> 216.239.32.10  OK        <- ns1.google.com, not Cloudflare
+      #
+      # So this is destination-scoped rather than a blanket UDP block, which is why
+      # it presents as a handful of arbitrary sites being down rather than as "DNS is
+      # down". Any zone whose authoritative servers are Cloudflare-hosted SERVFAILs:
+      # falcon.us-2.crowdstrike.com was the report, discord.com, zendesk.com and
+      # shopify.com were all failing at the same time, while google.com and
+      # github.com were fine. unbound will not recover on its own — it falls back to
+      # TCP on a truncated answer, never on a timeout.
+      #
+      # Global, not per-zone, because the blocked set is a moving tenant policy and
+      # unbound has no per-destination transport toggle for recursion. The cost is
+      # one extra round trip on a cold lookup; the cache and prefetch below keep it
+      # off the hot path, and correctness beats a few ms on names that currently do
+      # not resolve at all.
+      tcp-upstream = true;
 
       # The cache is what keeps recursion off the hot path — cold lookups are
       # 50-300ms, repeats are 0ms. prefetch refreshes popular entries before they
@@ -154,6 +179,11 @@
           "10.2.75.10"
           "10.10.80.31"
         ];
+        # Opt this zone back out of the global tcp-upstream above, which per-zone
+        # forward-tcp-upstream would otherwise inherit. Keeps the DCs on UDP, as the
+        # comment above requires: these are tunnelled destinations rather than
+        # blocked public ones, and their TCP/53 behaved inconsistently in testing.
+        forward-tcp-upstream = false;
       }
     ];
   };
