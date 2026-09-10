@@ -299,6 +299,16 @@
     # manifest id.
     programs.dankMaterialShell.plugins.caffeine.src = ./apps/common/dms-caffeine;
 
+    # itera's own update pill (upstream #155, desktop/update-indicator.nix)
+    # compares only the itera rev this system was built from against the
+    # repository head. apps/common/flake-update-check.nix already watches every
+    # input in this flake's lock, evaluates the update before offering it, and
+    # owns the `flakeNews` pill in barConfigs above. The upstream widget would
+    # never render anyway (barConfigs is replaced wholesale here, so its
+    # `iteraUpdate` id is dropped), so this only stops the half-hourly
+    # unauthenticated poll of github.com that comes with it.
+    desktop.updateIndicator.enable = false;
+
     # Extra home dirs to persist beyond itera's curated set (which already keeps
     # .config/.local/.cache/.ssh/.claude/Documents/Downloads/Pictures). This holds
     # data restored from the Ventoy backup by install.sh — without persisting it
