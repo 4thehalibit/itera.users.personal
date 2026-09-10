@@ -1,0 +1,57 @@
+{
+  "dark": {
+    "name": "Astros",
+
+    "primary": "#EB6E1F",
+    "primaryText": "#1E0A00",
+    "primaryContainer": "#B8541A",
+    "primaryContainerText": "#FFDCC7",
+
+    "secondary": "#7FA3C9",
+    "secondaryText": "#05192E",
+    "secondaryContainer": "#0A3D78",
+    "secondaryContainerText": "#D3E3F7",
+
+    "tertiary": "#F5B335",
+    "tertiaryText": "#241700",
+    "tertiaryContainer": "#8A6110",
+    "tertiaryContainerText": "#FFE4B0",
+
+    "surface": "#000E1E",
+    "surfaceText": "#EEF3FA",
+    "surfaceVariant": "#0A3D78",
+    "surfaceVariantText": "#B4C4DA",
+    "surfaceTint": "#EB6E1F",
+    "surfaceDim": "#00070F",
+    "surfaceBright": "#0A3D78",
+
+    "background": "#000E1E",
+    "backgroundText": "#EEF3FA",
+
+    "outline": "#14508F",
+    "outlineVariant": "#0A2E55",
+
+    "surfaceContainerLowest": "#00070F",
+    "surfaceContainerLow": "#00142C",
+    "surfaceContainer": "#00193A",
+    "surfaceContainerHigh": "#002D62",
+    "surfaceContainerHighest": "#0A3D78",
+
+    "error": "#EF4D5E",
+    "errorText": "#2A0006",
+    "errorContainer": "#8C1020",
+    "errorContainerText": "#FFDADC",
+
+    "warning": "#F5B335",
+    "info": "#3E8FD0",
+    "success": "#3FA96B",
+
+    "inverseSurface": "#EEF3FA",
+    "inverseOnSurface": "#00193A",
+    "inversePrimary": "#B8541A",
+    "scrim": "#00070F",
+    "shadow": "#00070F",
+
+    "matugen_type": "scheme-tonal-spot"
+  }
+}

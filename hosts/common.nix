@@ -43,6 +43,24 @@
     	email = vwestberg@lselectric.com
   '';
 
+  # GTK: consume DMS's generated palette. DMS's internal matugen writes
+  # ~/.config/gtk-{3.0,4.0}/dank-colors.css (32 @define-color entries) on every
+  # theme change, but nothing imported it, so GTK apps were themed only by the
+  # `GTK_THEME=Adwaita:dark` env var itera sets in desktop/theme.nix — i.e. they
+  # ignored the palette entirely. These two one-line stylesheets are the missing
+  # consumer. Adwaita stays the theme; the import just re-points its named
+  # colors at the Astros palette. There is no upstream itera option for gtk.css,
+  # hence hjem directly (same as .gitconfig above, re-linked every boot so it
+  # needs no impermanence entry).
+  hjem.users.vwestberg.files = {
+    ".config/gtk-3.0/gtk.css".text = ''
+      @import url("dank-colors.css");
+    '';
+    ".config/gtk-4.0/gtk.css".text = ''
+      @import url("dank-colors.css");
+    '';
+  };
+
   # NinjaOne remote session player: installs ncplayer + registers the ninjarmm://
   # URL handler. Replaces the old impure ~/private/*.deb + --impure workflow.
   programs.ninjarmm-ncplayer.enable = true;
@@ -95,6 +113,25 @@
     # on any suspend path. DMS respects idle-inhibitors, so a Teams/Zoom call or
     # video playback keeps it awake. Adjust the seconds to change the timeouts.
     programs.dankMaterialShell.settings = {
+      # Palette: Houston Astros (modern era) — navy #002D62 + orange #EB6E1F.
+      # DMS otherwise falls back to its stock `purple` theme, which is what this
+      # replaces. A custom theme is two keys plus one JSON file (DMS
+      # Common/Theme.qml switchTheme -> loadCustomThemeFromFile); loading it also
+      # runs buildMatugenColorsFromTheme, so DMS's internal matugen regenerates
+      # ~/.config/{mango/dms,wezterm/colors,gtk-*,zed/themes}/ from these colors.
+      # Of those only the GTK CSS and the Zed theme are actually consumed (see
+      # the gtk.css written below and the zed theme override further down) —
+      # mango and wezterm get explicit values in their own files instead, since
+      # the mango template emits only 3 of its 11 colors and the wezterm one
+      # derives its ANSI ramp from Material tones rather than a tuned 16.
+      #
+      # NOTE ~/.config/DankMaterialShell/settings.json is a read-only nix store
+      # symlink, and DMS detects that and refuses to persist — so the in-shell
+      # theme picker and `dms ipc call settings set` will NOT stick. Nix is the
+      # only working lever. Colors live in the JSON, not here.
+      currentThemeName = "custom";
+      customThemeFile = "${./apps/common/astros-theme.json}";
+
       acLockTimeout = 480;
       batteryLockTimeout = 480;
       acSuspendTimeout = 600;
@@ -186,6 +223,20 @@
       initialPassword = "changeme";
       # GUI apps are installed per-app under ./apps/common/*.nix via
       # `itera.users.vwestberg.packages`, matching itera.personal's idiom.
+
+      # Editor palette. itera pins Zed to its built-in One Dark/One Light
+      # (mkDefault, modules/programs/zed.nix), while DMS's matugen has been
+      # generating ~/.config/zed/themes/dank-zed-theme.json from the live
+      # palette all along with nothing selecting it. Point Zed at that instead
+      # so it follows the Astros theme. `settings` merges SHALLOW per key
+      # (system // per-user), so the whole `theme` attrset has to be restated,
+      # not just the one field. Theme names come from the generated file's
+      # `themes[].name`, NOT the filename.
+      programs.zed.settings.theme = {
+        mode = "dark";
+        dark = "DankShell Dark";
+        light = "DankShell Light";
+      };
     };
   };
 

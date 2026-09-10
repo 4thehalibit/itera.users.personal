@@ -23,7 +23,7 @@ import csv, sys
 ESC = chr(27)
 R   = ESC + '[0m'
 B   = ESC + '[1m'
-HDR = ESC + '[1;96m'
+HDR = ESC + '[1;38;2;235;110;31m'
 TAB = chr(9)
 KEEP = ['User', 'Extension', 'Phone Number', 'Groups', 'Email']
 with open(sys.argv[1], newline=str()) as f:

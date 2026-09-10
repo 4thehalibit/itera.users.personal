@@ -202,8 +202,32 @@ in
       windowrule=isfloating:1,width:960,height:720,appid:keybinds-popup
       windowrule=isfloating:1,width:1100,height:800,appid:vonage-directory
 
-      # environment
-      env=GTK_THEME,Adwaita:dark
+      # Astros palette (see hosts/common.nix for the DMS half). mango has no
+      # typed color options in itera, so colors go through extraConfig; format is
+      # 0xRRGGBBAA. These replace mango's compiled-in defaults (gold focuscolor,
+      # grey bordercolor, brown rootcolor) at etc/mango/config.conf:131-141.
+      #
+      # DMS's matugen also writes ~/.config/mango/dms/colors.conf, and it could
+      # be pulled in with a `source =` line instead — but it only emits
+      # bordercolor/focuscolor/urgentcolor, leaving the other eight on mango's
+      # unrelated defaults. Explicit values cover all of them and do not depend
+      # on DMS having regenerated the file first.
+      bordercolor=0x14508Fff
+      focuscolor=0xEB6E1Fff
+      urgentcolor=0xEF4D5Eff
+      splitcolor=0xFF8A3Dff
+      dropcolor=0x3FA96B55
+      maximizescreencolor=0xF5B335ff
+      scratchpadcolor=0x3E8FD0ff
+      globalcolor=0xC05B8Cff
+      overlaycolor=0x33A8B5ff
+      rootcolor=0x000E1Eff
+      shadowscolor=0x00070Fff
+
+      # NOTE GTK_THEME is NOT set here — itera already exports it system-wide in
+      # modules/nixos/desktop/theme.nix, and the duplicate line that used to sit
+      # here just set the same value twice. GTK colors now come from the
+      # dank-colors.css import wired up in hosts/common.nix.
 
       # home monitor auto-reset (eiros exec-once): power-cycle the 4K, then reposition laptop
       exec-once=sh -c 'sleep 15 && output=$(wlr-randr | grep VX3211-4K | awk "{print \$1}") && [ -n "$output" ] && wlr-randr --output "$output" --off && sleep 2 && wlr-randr --output "$output" --on && sleep 1 && wlr-randr --output eDP-1 --pos 2560,220'
