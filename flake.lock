@@ -177,6 +177,26 @@
         "type": "github"
       }
     },
+    "falcon-sensor": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789052352,
+        "narHash": "sha256-i/8A/pDmONAGWQzqkSdghBb55F4D9ulEhPYkOI5oK+g=",
+        "owner": "lcleveland",
+        "repo": "falcon-sensor",
+        "rev": "b575b5b87ae1e9bf92393f7b05838624020ad568",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lcleveland",
+        "repo": "falcon-sensor",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -689,6 +709,7 @@
     },
     "root": {
       "inputs": {
+        "falcon-sensor": "falcon-sensor",
         "hjem": "hjem",
         "itera": "itera",
         "netskope": "netskope",

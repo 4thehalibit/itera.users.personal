@@ -35,6 +35,17 @@
       url = "github:lcleveland/netskope-client";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # CrowdStrike Falcon sensor — the corporate EDR agent. Exposes
+    # nixosModules.default (options: services.falcon-sensor.*), an overlay for
+    # the three helper packages, and a #find-sensor app that lists the sensors
+    # the tenant can install. Work infrastructure, so host-scoped exactly like
+    # netskope above: it rides in through specialArgs and is imported by
+    # hosts/apps/framework/falcon-sensor.nix. Share our nixpkgs.
+    falcon-sensor = {
+      url = "github:lcleveland/falcon-sensor";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -43,6 +54,7 @@
       itera,
       ninjarmm-ncplayer,
       netskope,
+      falcon-sensor,
       ...
     }:
     let
@@ -58,11 +70,20 @@
           # rides along the same way: importing a flake's module is an
           # import-time choice, not a `config.*` option, and this one is
           # framework-only so it must not land in the `modules` list.
-          specialArgs = { inherit itera netskope; };
+          specialArgs = { inherit itera netskope falcon-sensor; };
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default
-            { nixpkgs.overlays = [ itera.overlays.default ]; }
+            # falcon-sensor's overlay makes pkgs.falcon-sensor-{fetch,status,tray}
+            # resolve. The module falls back to callPackage without it, but the
+            # tray icon override in hosts/apps/framework/falcon-sensor.nix needs
+            # a pkgs handle to overrideAttrs.
+            {
+              nixpkgs.overlays = [
+                itera.overlays.default
+                falcon-sensor.overlays.default
+              ];
+            }
             ./hosts/common.nix
             hostModule
           ];
