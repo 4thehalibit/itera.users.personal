@@ -106,12 +106,12 @@
     tray = {
       enable = true;
 
-      # Custom icons: a falcon feather badged with the sensor's state, in the
-      # Astros palette's semantic colours (see hosts/apps/common/astros-theme.json)
-      # so they sit on the navy bar rather than fighting it. Upstream draws a
+      # Custom icons: a bird badged with the sensor's state, in the Astros
+      # palette's semantic colours (see hosts/apps/common/astros-theme.json) so
+      # they sit on the navy bar rather than fighting it. Upstream draws a
       # coloured shield.
       #
-      # The mark is Font Awesome Free 7's `feather-pointed`, which is CC BY 4.0
+      # The mark is Font Awesome Free 7's `crow`, which is CC BY 4.0
       # (https://fontawesome.com/license/free) — ATTRIBUTION REQUIRED, and it is
       # carried in a comment inside each generated SVG. ./falcon-icons/render-icons.py
       # regenerates them from the font.
