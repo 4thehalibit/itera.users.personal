@@ -113,31 +113,29 @@
       # nothing to lose to RTT and nothing reachable only at home. The accepted cost
       # is trusting a third party for resolution, taken over DNS that does not work.
 
-      # Recurse over TCP, not UDP. The matrix above recorded `udp 53 -> 1.1.1.1 OK`
-      # on 2026-08-20; that is no longer true. Re-measured 2026-09-10 under live
-      # steering, UDP/53 to Cloudflare address space is now dropped, while TCP/53 to
-      # the same addresses is untouched:
+      # DO NOT set tcp-upstream here. It was added on 2026-09-10 so recursion could
+      # reach Cloudflare-hosted authoritative servers, which drop UDP/53 under
+      # steering while leaving TCP/53 alone. The forward-zone above made it
+      # unnecessary - unbound no longer talks to those servers at all, only to
+      # 8.8.8.8 - and it is actively harmful, because it silently disables the
+      # Netskope tenant's entire wildcard exception list.
       #
-      #   udp 53 -> 162.159.60.1   TIMEOUT   <- blue.foundationdns.com, authoritative
-      #   tcp 53 -> 162.159.60.1   OK          for crowdstrike.com
-      #   udp 53 -> 1.1.1.1        TIMEOUT   <- was OK in the 2026-08-20 matrix
-      #   tcp 53 -> 1.1.1.1        OK
-      #   udp 53 -> 216.239.32.10  OK        <- ns1.google.com, not Cloudflare
+      # The Netskope client builds its IP-to-hostname map by PARSING DNS IT CAN SEE,
+      # and it parses UDP only. Domain exceptions like `*.ninjarmm.com` and
+      # `*.apple.com` are matched against that map, so with every upstream query on
+      # TCP the map stays empty, `tunnel.cpp:1296` logs `to host: ` blank for every
+      # flow, and no wildcard exception ever matches. Exact-FQDN exceptions keep
+      # working, because those get pre-resolved to IPs and matched by address -
+      # which is why app.ninjarmm.com was bypassed while us2.ninjarmm.com was not,
+      # even though `*.ninjarmm.com` is in the list. Downstream of that: the
+      # NinjaOne console origin us2.ninjarmm.com was steered, so its session key
+      # carried the Netskope egress IP while ncplayer dialled port 7075 direct, and
+      # the relay rejected the mismatch as `Blacklisted session.(OOB-Q)`.
       #
-      # So this is destination-scoped rather than a blanket UDP block, which is why
-      # it presents as a handful of arbitrary sites being down rather than as "DNS is
-      # down". Any zone whose authoritative servers are Cloudflare-hosted SERVFAILs:
-      # falcon.us-2.crowdstrike.com was the report, discord.com, zendesk.com and
-      # shopify.com were all failing at the same time, while google.com and
-      # github.com were fine. unbound will not recover on its own — it falls back to
-      # TCP on a truncated answer, never on a timeout.
-      #
-      # Global, not per-zone, because the blocked set is a moving tenant policy and
-      # unbound has no per-destination transport toggle for recursion. The cost is
-      # one extra round trip on a cold lookup; the cache and prefetch below keep it
-      # off the hot path, and correctness beats a few ms on names that currently do
-      # not resolve at all.
-      tcp-upstream = true;
+      # Proven 2026-09-10 in one step: a single `host -t A support.apple.com 8.8.8.8`
+      # (UDP, through the tunnel) made the very next curl to that name bypass as
+      # `exception host: support.apple.com`. Symptom to watch for: blank hostnames in
+      # /opt/netskope/stagent/logs/nsdebuglog.log at tunnel.cpp:1296.
 
       # The cache is what keeps recursion off the hot path — cold lookups are
       # 50-300ms, repeats are 0ms. prefetch refreshes popular entries before they
@@ -195,8 +193,10 @@
     # for a guaranteed NXDOMAIN. SERVFAIL is the honest answer.
     settings.forward-zone = [
       {
-        # Root zone. Inherits the global tcp-upstream above, so these are reached
-        # over TCP/53, which the steering leaves alone at every destination measured.
+        # Root zone, over UDP. UDP/53 to these three is unaffected by the steering
+        # (measured), and it has to stay UDP: the Netskope client only learns
+        # hostnames from DNS it can parse, and it parses UDP only. See the
+        # tcp-upstream note above.
         name = ".";
         forward-addr = [
           "8.8.8.8"
@@ -210,10 +210,9 @@
           "10.2.75.10"
           "10.10.80.31"
         ];
-        # Opt this zone back out of the global tcp-upstream above, which per-zone
-        # forward-tcp-upstream would otherwise inherit. Keeps the DCs on UDP, as the
-        # comment above requires: these are tunnelled destinations rather than
-        # blocked public ones, and their TCP/53 behaved inconsistently in testing.
+        # Explicit, though it now matches the default: the DCs stay on UDP. Their
+        # TCP/53 behaved inconsistently in testing, and these are tunnelled
+        # destinations rather than blocked public ones.
         forward-tcp-upstream = false;
       }
     ];
