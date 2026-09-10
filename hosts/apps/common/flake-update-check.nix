@@ -329,6 +329,70 @@ let
 
     echo ""
     echo "Done. New generation activated."
+
+    # --- what still needs restarting ---------------------------------------
+    #
+    # `itera update` is a SWITCH: it activates the new generation, but anything
+    # already running keeps what it started with. Two cases are worth telling
+    # the user about, and both are precisely detectable by comparing
+    # /run/booted-system against /run/current-system -- so this asks only when
+    # it actually matters instead of nagging every run.
+    #
+    #   kernel/initrd/modules  the new kernel is installed but the old one is
+    #                          still the one running. Only a reboot fixes that.
+    #   dms                    a flake update usually moves the dms input, and
+    #                          the running shell holds its old store path. See
+    #                          the note in ../../common.nix about hjem swapping
+    #                          a symlink the shell already resolved.
+    boot_before=$(readlink -f /run/booted-system/initrd /run/booted-system/kernel       /run/booted-system/kernel-modules 2>/dev/null | tr '
+' ' ')
+    boot_after=$(readlink -f /run/current-system/initrd /run/current-system/kernel       /run/current-system/kernel-modules 2>/dev/null | tr '
+' ' ')
+    dms_before=$(readlink -f /run/booted-system/sw/bin/dms 2>/dev/null || true)
+    dms_after=$(readlink -f /run/current-system/sw/bin/dms 2>/dev/null || true)
+
+    if [ "$boot_before" != "$boot_after" ]; then
+      echo ""
+      echo "REBOOT NEEDED — the kernel, initrd or modules changed."
+      echo "  The new kernel is installed and will be used on next boot; the old"
+      echo "  one is still running. A reboot also covers the shell restart below."
+      printf 'Reboot now? [y/N] '
+      read -r answer
+      case "$answer" in
+        y | Y | yes | YES)
+          echo "Rebooting."
+          systemctl reboot
+          exit 0
+          ;;
+        *) echo "  Skipped — reboot when convenient." ;;
+      esac
+    else
+      echo "No reboot needed: kernel, initrd and modules are unchanged."
+    fi
+
+    if [ "$dms_before" != "$dms_after" ]; then
+      echo ""
+      echo "The shell (dms) was updated. The running one keeps the old version"
+      echo "until it is restarted, so new DMS features and settings will not"
+      echo "appear yet."
+      printf 'Restart the shell now? [y/N] '
+      read -r answer
+      case "$answer" in
+        y | Y | yes | YES)
+          # mango starts it with `exec-once=dms run`, which does not respawn
+          # after a kill, so the two have to be one command. setsid so the new
+          # shell outlives this terminal.
+          echo "Restarting the shell."
+          dms kill
+          setsid dms run > /dev/null 2>&1 &
+          ;;
+        *)
+          echo "  Skipped. To do it later, in nushell:"
+          echo "    dms kill; job spawn { setsid dms run out+err> /dev/null }"
+          ;;
+      esac
+    fi
+
     hold
   '';
 in
