@@ -162,7 +162,20 @@ PluginComponent {
                         iconName: "rocket_launch"
                         iconColor: Theme.primary
                         tooltipText: "Update inputs and deploy"
-                        onClicked: root.runUpdate()
+                        // Dismiss the popout on the way out, or it sits over the
+                        // terminal that just opened and steals the keyboard, so
+                        // the confirm prompt cannot be answered until it is
+                        // closed by hand. `closePopout` is a property the host
+                        // assigns, so it is guarded the same way
+                        // PopoutComponent's own close button guards it.
+                        // NOTE the refresh button below deliberately does NOT
+                        // close: a check rewrites the report in place and the
+                        // point is to read the new one.
+                        onClicked: {
+                            root.runUpdate();
+                            if (popout.closePopout)
+                                popout.closePopout();
+                        }
                     }
 
                     // Re-run the check without waiting for Monday, same as a
