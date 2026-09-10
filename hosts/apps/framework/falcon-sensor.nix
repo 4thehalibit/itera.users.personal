@@ -17,10 +17,21 @@
 #   "Sensor Download: read". Copy the client id and secret (the secret is shown
 #   once). Then:
 #
-#     sudo install -d -m 0700 /persist/secrets
-#     printf %s '<client id>'     | sudo install -m 0400 /dev/stdin /persist/secrets/falcon-api-client-id
-#     printf %s '<client secret>' | sudo install -m 0400 /dev/stdin /persist/secrets/falcon-api-client-secret
-#     printf %s '<CID>'           | sudo install -m 0400 /dev/stdin /persist/secrets/falcon-cid
+#     sudo bash -c 'install -d -m 0700 /persist/secrets; for f in \
+#       falcon-api-client-id falcon-api-client-secret falcon-cid; do \
+#       printf "%s: " "$f"; read -rs v; echo; \
+#       printf %s "$v" > /persist/secrets/$f; chmod 0400 /persist/secrets/$f; done'
+#
+#   It prompts for the three values in that order, with the input hidden. Typed
+#   at a prompt rather than passed as an argument on purpose: an argument lands
+#   in shell history and is readable in /proc while the command runs, and the
+#   API client secret is shown only once at creation, so leaking it means
+#   generating a new one. `sudo bash -c` because the interactive shell here is
+#   nushell, which does not take a POSIX pipeline.
+#
+#   `printf %s` writes no trailing newline, though one would in fact be
+#   tolerated: the fetcher does `tr -d '\n'` on the API files, and the CID is
+#   read through `$(cat ...)`, which strips trailing newlines itself.
 #
 #   The CID is the tenant's customer id, format 0123456789ABCDEF0123456789ABCDEF-01.
 #   Get it from the console under Host setup and management -> Deploy -> Sensor
