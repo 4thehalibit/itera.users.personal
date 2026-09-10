@@ -106,10 +106,20 @@
     tray = {
       enable = true;
 
-      # Custom icons. The upstream package draws a coloured shield; these are a
-      # falcon head instead, in the Astros palette's semantic state colours (see
-      # hosts/apps/common/astros-theme.json) so they sit on the navy bar rather
-      # than fighting it.
+      # Custom icons: a falcon feather badged with the sensor's state, in the
+      # Astros palette's semantic colours (see hosts/apps/common/astros-theme.json)
+      # so they sit on the navy bar rather than fighting it. Upstream draws a
+      # coloured shield.
+      #
+      # The mark is Font Awesome Free 7's `feather-pointed`, which is CC BY 4.0
+      # (https://fontawesome.com/license/free) — ATTRIBUTION REQUIRED, and it is
+      # carried in a comment inside each generated SVG. ./falcon-icons/render-icons.py
+      # regenerates them from the font.
+      #
+      # A hand-drawn falcon head came first and was scrapped: it did not survive
+      # 22px. A hooked beak, brow ridge and malar stripe all turn to mush at tray
+      # size, and a wings-out flight silhouette collapses into a cross. A glyph
+      # drawn by people who design for 16-24px beats a bezier guess.
       #
       # NOTE the upstream icons are the flake author's own generic shield, NOT
       # CrowdStrike's falcon mark, so this is taste and theme fit — there is no
