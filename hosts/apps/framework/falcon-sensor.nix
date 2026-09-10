@@ -41,14 +41,26 @@
 # falcon-sensor-fetch.service fails at boot; the config still evaluates, so a
 # rebuild is safe, but the sensor will not install.
 #
-# PINNING THE SENSOR VERSION. `hash` is left null below, which means the host
-# installs whatever the tenant's update policy resolves to — convenient, but
-# non-deterministic, and it asks the API on every boot which build to use. To
-# pin, list what the tenant offers and paste one hash in:
+# SENSOR VERSION IS PINNED via `hash` below. Unpinned, the host installs
+# whatever the tenant's update policy resolves to — convenient, but
+# non-deterministic: two rebuilds on different days can land on different
+# sensors, and every boot has to ask the API which one to use.
 #
-#     nix run github:lcleveland/falcon-sensor#find-sensor -- \
+# To bump, re-run find-sensor and paste the new hash. To follow the fleet's
+# update policy instead of pinning, drop `hash` and set
+# `api.updatePolicy = "platform_default"` (needs the "Sensor update policies:
+# read" scope on the API client as well).
+#
+# Listing what the tenant offers:
+#
+#     nix run 'github:lcleveland/falcon-sensor#find-sensor' -- \
 #       --client-id-file /persist/secrets/falcon-api-client-id \
 #       --client-secret-file /persist/secrets/falcon-api-client-secret
+#
+#   The quotes around the flake ref are load-bearing in nushell: `#` starts a
+#   comment there, so an unquoted `...falcon-sensor#find-sensor` is truncated at
+#   the `#` and fails with nu::parser::parse_mismatch. Needs sudo too, since the
+#   credential files are root-owned 0400.
 #
 {
   falcon-sensor,
@@ -63,6 +75,16 @@
 
     # Never `cid = "..."` — this repo is public.
     cidFile = "/persist/secrets/falcon-cid";
+
+    # 8.10.19402, the newest this tenant offers as of 2026-09-10 (tenant cloud
+    # us-2). One hash covers both the Ubuntu and Debian rows find-sensor lists,
+    # because it is the same .deb. CrowdStrike's download endpoint is keyed by
+    # this same sha256, so the value both selects the installer and verifies it.
+    #
+    # This happens to equal the `example` in the upstream option's docs. That is
+    # a coincidence of both pointing at the current release — it is a real value
+    # taken from this tenant's find-sensor output, not a placeholder left in.
+    hash = "sha256-RVNTBhFgWCM2y2bT4POM6btnvXiOFReoL1LvODFvVs8=";
     api.clientIdFile = "/persist/secrets/falcon-api-client-id";
     api.clientSecretFile = "/persist/secrets/falcon-api-client-secret";
 
