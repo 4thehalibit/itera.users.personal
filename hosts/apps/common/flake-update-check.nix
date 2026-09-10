@@ -305,6 +305,28 @@ let
       exit 1
     fi
 
+    # Re-run the check so the pill stops advertising what we just applied. The
+    # report is the widget's only source of truth and nothing else rewrites it,
+    # so without this the pill keeps offering the same 11 inputs after they are
+    # already in. A fresh check against the pushed lock reports "no inputs
+    # moved" and the pill goes quiet.
+    #
+    # No shell or plugin restart is needed: the report is a real file, not a
+    # store symlink, and the widget's FileView watches it (onFileChanged ->
+    # reload), so the pill updates itself when the new report lands.
+    #
+    # --no-block because the check shallow-clones the repo, runs its own
+    # `nix flake update` and evaluates the whole config -- minutes, not the
+    # seconds the toast claims. Nothing here needs to wait for it.
+    echo ""
+    echo "==> refreshing the flake report"
+    if systemctl --user start --no-block flake-update-check; then
+      echo "    started; the bar pill will clear itself once it finishes"
+    else
+      echo "    could not trigger it -- run this by hand to clear the pill:"
+      echo "      systemctl --user start flake-update-check"
+    fi
+
     echo ""
     echo "Done. New generation activated."
     hold
