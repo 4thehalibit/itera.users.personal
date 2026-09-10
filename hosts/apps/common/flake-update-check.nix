@@ -10,7 +10,8 @@
 # /var/lib/itera/facter.json for the --impure eval; itera chmods that 0644
 # precisely so a non-root eval can read it.
 #
-#   flake-news   print the latest report
+#   flake-news          print the latest report
+#   flake-update-apply  apply what the report found (prompts, then deploys)
 #
 # The dank-bar pill for the same report lives in ./dms-flake-news (registered
 # below). Its widget id has to appear in a bar config's widget list too — that
@@ -168,12 +169,151 @@ let
       echo "  systemctl --user start flake-update-check"
     fi
   '';
+
+  # The other half of the pill: actually APPLY what the report found.
+  #
+  # The checker above deliberately never touches the live config, which left a
+  # gap — the report just ends in a block of commands to retype by hand. This
+  # runs them, gated on the report itself. The flakeNews widget's update button
+  # spawns this in a wezterm popup (see the appid:flake-update windowrule in
+  # ./mango-keybinds.nix).
+  #
+  # WHY A TERMINAL AND NOT A SILENT BUTTON: `itera update` calls
+  # itera_facter_refresh before nh starts, and with ITERA_FACTER_AUTOGEN=1 (set
+  # in /etc/itera/facter.env on this host) that is three interactive sudo calls
+  # — mkdir, nixos-facter -o, chmod. nixos-facter is in NO NOPASSWD rule
+  # (../../common.nix exempts only /run/current-system/sw/bin/nixos-rebuild),
+  # and nh then needs sudo of its own. Up to four password prompts, so this
+  # needs a tty; a headless version dies on the first one with
+  # "sudo: a terminal is required to read the password".
+  flakeUpdateApply = pkgs.writeShellScriptBin "flake-update-apply" ''
+    report=${reportFile}
+
+    hold() {
+      printf '\n[press enter to close] '
+      read -r _ || true
+    }
+
+    if [ ! -r "$report" ]; then
+      echo "No flake report at $report."
+      echo "Run a check first:  systemctl --user start flake-update-check"
+      hold
+      exit 1
+    fi
+
+    head -n 2 "$report"
+
+    # Report shape 1: nothing moved.
+    if grep -q '^Up to date: no inputs moved' "$report"; then
+      echo ""
+      echo "Nothing to do — no inputs have moved since the last check."
+      hold
+      exit 0
+    fi
+
+    # Report shape 2: inputs moved but the result does not evaluate. The report
+    # says "DO NOT update yet" and it is right — this is the one real safety
+    # gate here, so refuse rather than warn.
+    if ! grep -qx 'Config eval: OK' "$report"; then
+      echo ""
+      echo "REFUSING: the report says the updated inputs do not evaluate."
+      echo ""
+      sed -n '/^Config eval:/,/^$/p' "$report"
+      echo "Fix the eval error first, then re-check with:"
+      echo "  systemctl --user start flake-update-check"
+      hold
+      exit 1
+    fi
+
+    # Collect the moved input names from the DIFF section only — the eval
+    # detail below it is indented the same 2 spaces. Field-split rather than
+    # awk, matching this file's existing avoid-gawk-for-one-line stance. The
+    # "N of M inputs moved." summary line has no " -> ", so it drops out.
+    section=$(sed -n '/^Source: /,/^Config eval:/p' "$report")
+    names=""
+    count=0
+    while IFS= read -r line; do
+      case "$line" in
+        "  "*" -> "*)
+          set -- $line
+          names="$names $1"
+          count=$((count + 1))
+          ;;
+      esac
+    done <<<"$section"
+
+    if [ "$count" -eq 0 ]; then
+      echo ""
+      echo "Could not find any moved inputs in the report. Re-check with:"
+      echo "  systemctl --user start flake-update-check"
+      hold
+      exit 1
+    fi
+
+    # Keep the subject line readable when a 3-week jump moves a dozen inputs.
+    if [ "$count" -le 4 ]; then
+      msg="chore(flake): update$names"
+    else
+      msg="chore(flake): update $count inputs"
+    fi
+
+    echo ""
+    echo "Moved inputs ($count):"
+    printf '  %s\n' $names
+    echo ""
+    echo "This will:"
+    echo "  nix flake update          in ~/Documents/itera.users.personal"
+    echo "  deploy \"$msg\""
+    echo "    -> git add -A, commit, push to GitHub"
+    echo "    -> itera update: builds and ACTIVATES a new system generation"
+    echo ""
+    printf 'Proceed? [y/N] '
+    read -r reply
+    case "$reply" in
+      y | Y | yes | YES) ;;
+      *)
+        echo "Aborted. Nothing changed."
+        hold
+        exit 0
+        ;;
+    esac
+
+    cd "$HOME/Documents/itera.users.personal" || {
+      echo "FAILED: no checkout at ~/Documents/itera.users.personal"
+      hold
+      exit 1
+    }
+
+    echo ""
+    echo "==> nix flake update"
+    if ! nix flake update; then
+      echo "FAILED: nix flake update"
+      hold
+      exit 1
+    fi
+
+    # deploy = git add -A + commit + push + exec itera update. It already
+    # passes --refresh (ITERA_UPDATE_REMOTE=1 in /etc/itera/update.env), which
+    # is what stops the 1h flake tarball cache re-applying the previous commit.
+    echo ""
+    echo "==> deploy"
+    if ! deploy "$msg"; then
+      echo "FAILED: deploy"
+      hold
+      exit 1
+    fi
+
+    echo ""
+    echo "Done. New generation activated."
+    hold
+  '';
 in
 {
   environment.systemPackages = [
     pkgs.libnotify # notify-send: was only in the store as a dep, not on PATH
     checkScript
     flakeNews
+    flakeUpdateApply
   ];
 
   # Dank-bar pill reading ${reportFile}. The attr name must match the `id` in

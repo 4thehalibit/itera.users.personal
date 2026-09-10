@@ -140,9 +140,51 @@
       lockBeforeSuspend = true;
 
       # Bar layout. itera ships this list as an mkDefault, and it is one whole
-      # value rather than a merged attrset, so adding a single widget means
-      # restating the layout here. Kept identical to itera's default apart from
-      # the two additions below.
+      # value rather than a merged attrset, so changing a single widget means
+      # restating the whole thing here.
+      #
+      # TWO BARS, SPLIT BY SCREEN. The three panels this laptop sees differ in
+      # LOGICAL width by 3.2x, because each runs a different scale:
+      #
+      #   eDP-1   2560x1600 @ 1.6  ->  1600   (laptop, and often the only screen)
+      #   DP-4    3840x2160 @ 1.5  ->  2560   (home 4K)
+      #   DP-11   5120x1440 @ 1.0  ->  5120   (work 49" ultrawide)
+      #
+      # One `screenPreferences = ["all"]` bar therefore put the same 16 widgets
+      # on a 1600px panel and a 5120px one. The laptop bar below drops what is
+      # reachable another way; the desktop bar keeps everything.
+      #
+      # GROUPING: DMS has NO collapsible widget group for bars (checked the
+      # source: nothing group-shaped in Modules/DankBar, and desktopWidgetGroups
+      # is for desktop widgets). What it does have is `separator`, a 1px
+      # hairline widget id. So the right side is split into clusters by WHY you
+      # look at them, in the same order on both bars so muscle memory carries
+      # over between docked and undocked:
+      #
+      #   where am I | machine load | wants attention | controls
+      #
+      # WHAT WAS DROPPED FROM THE LAPTOP BAR AND WHERE IT WENT:
+      #   clipboard      already on SUPER+V (see apps/common/mango-keybinds.nix)
+      #   cpuUsage       SUPER+I -> `dms ipc call processlist toggle`, and the
+      #   memUsage       dash overview tab has a SystemMonitorCard with both
+      #   weather        the dash has a whole weather tab
+      # `music` stays on both: DMS does not even load that widget without an
+      # active MPRIS player, so it costs nothing when nothing is playing.
+      #
+      # TWO TRAPS, both load-bearing:
+      #   showOnLastDisplay on the DESKTOP bar must stay false. When true, DMS
+      #   shows a bar whose screenPreferences match NOTHING as long as exactly
+      #   one screen is connected — so the full bar would come back on the
+      #   laptop the moment it is undocked, undoing the entire split.
+      #
+      #   controlCenterButton has to stay on at least one bar. `dms ipc call
+      #   control-center open|toggle` resolves through
+      #   getPreferredBar("controlCenterButtonRef") and returns null when no bar
+      #   carries that widget, so dropping it everywhere breaks the IPC.
+      #
+      # Widget entries may be strings OR attrsets with per-widget options (DMS
+      # DankBar.qml does Object.assign, so any key passes through to the
+      # widget). Only the ones that need an option are written as attrsets.
       #
       #   caffeine       click-to-toggle idle inhibitor — the timeouts above
       #                  suspend mid-presentation otherwise. DMS honours
@@ -155,13 +197,69 @@
       #                  tile and `dms ipc call inhibit toggle` stay in sync.
       #   flakeNews      upstream flake-input report (apps/common/flake-update-check.nix)
       barConfigs = [
+        # Laptop panel: 1600 logical px. Keep `id = "default"` — DMS refuses to
+        # delete the bar with that id, so it is the one that must always exist.
         {
           id = "default";
-          name = "Main Bar";
+          name = "Laptop Bar";
           enabled = true;
           position = 0;
-          screenPreferences = [ "all" ];
+          screenPreferences = [ "eDP-1" ];
+          # True here on purpose: this is the bar that SHOULD appear if the
+          # connector name ever fails to match.
           showOnLastDisplay = true;
+          # 2 instead of the default 4 — 7 pills on 1600px want the room.
+          spacing = 2;
+          leftWidgets = [
+            "launcherButton"
+            "workspaceSwitcher"
+            # Smallest variant, no title text: the window title is the single
+            # most elastic thing on the bar and it is already in the overview.
+            {
+              id = "focusedWindow";
+              focusedWindowCompactMode = true;
+              focusedWindowSize = 0;
+            }
+          ];
+          centerWidgets = [
+            "music"
+            { id = "clock"; clockCompactMode = true; }
+          ];
+          rightWidgets = [
+            # where am I
+            "ipIndicator"
+            # Hard cap at 3. DMS's auto-overflow otherwise allows up to ~50% of
+            # the section width (clamped 2-10), so on this panel the tray would
+            # grow to roughly 8 icons before hiding any. Anything past the third
+            # goes behind the tray's own chevron instead of lengthening the bar.
+            { id = "systemTray"; trayMaxVisibleItems = 3; }
+            "separator"
+            # wants attention
+            "flakeNews"
+            "notificationButton"
+            "separator"
+            # controls
+            "caffeine"
+            # Icon only on AC, number when it actually matters.
+            { id = "battery"; showBatteryPercentOnlyOnBattery = true; }
+            "controlCenterButton"
+          ];
+        }
+
+        # Home 4K (2560 logical) and work 49" ultrawide (5120 logical). Same
+        # cluster order as above, plus the machine-load cluster.
+        {
+          id = "desktop";
+          name = "Desktop Bar";
+          enabled = true;
+          position = 0;
+          screenPreferences = [
+            "DP-4"
+            "DP-11"
+          ];
+          # MUST be false — see the trap note above. True would put this bar
+          # back on the laptop whenever the laptop is the only screen.
+          showOnLastDisplay = false;
           leftWidgets = [
             "launcherButton"
             "workspaceSwitcher"
@@ -173,14 +271,22 @@
             "weather"
           ];
           rightWidgets = [
-            "systemTray"
-            "clipboard"
-            "cpuUsage"
-            "memUsage"
+            # where am I
             "ipIndicator"
+            "systemTray"
+            "separator"
+            # machine load — minimumWidth = false drops the invisible "100%"
+            # placeholder each of these reserves, so they take only the width
+            # of the number actually showing.
+            { id = "cpuUsage"; minimumWidth = false; }
+            { id = "memUsage"; minimumWidth = false; }
+            "separator"
+            # wants attention
             "flakeNews"
-            "caffeine"
             "notificationButton"
+            "separator"
+            # controls
+            "caffeine"
             "battery"
             "controlCenterButton"
           ];

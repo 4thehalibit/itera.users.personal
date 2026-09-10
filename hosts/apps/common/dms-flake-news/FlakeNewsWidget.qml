@@ -7,6 +7,10 @@
 //   "nix flake update FAILED:"        the check itself broke
 //   "Config eval: FAILED"             inputs moved but the config does not eval
 //   otherwise                         inputs moved, eval OK
+//
+// Two header actions in the popout: refresh re-runs the check, and (only in the
+// "updates" state) rocket_launch spawns `flake-update-apply` in a wezterm popup
+// to actually apply it.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -92,6 +96,17 @@ PluginComponent {
         ToastService.showInfo("Checking flake inputs…", "Takes a few seconds. The pill updates itself.");
     }
 
+    // Apply what the report found. Spawns a wezterm popup rather than running
+    // headless because `itera update` needs a tty: itera_facter_refresh fires
+    // three interactive sudo calls before nh even starts (mkdir,
+    // nixos-facter -o, chmod) and nixos-facter is in no NOPASSWD rule, then nh
+    // needs sudo of its own. The confirmation prompt and every safety check
+    // live in flake-update-apply, not here — see apps/common/flake-update-check.nix.
+    // No toast: a terminal window appearing is its own feedback.
+    function runUpdate() {
+        Quickshell.execDetached(["wezterm", "start", "--class", "flake-update", "--", "flake-update-apply"]);
+    }
+
     pillRightClickAction: () => root.runCheck()
 
     horizontalBarPill: Component {
@@ -131,15 +146,35 @@ PluginComponent {
             detailsText: root.checkedAt ? root.tooltip + " · checked " + root.checkedAt : root.tooltip
             showCloseButton: true
 
-            // Re-run the check without waiting for Monday, same as a right
-            // click on the pill. The unit is a oneshot, so a second press
-            // while it runs is a no-op.
+            // headerActions feeds a single Loader (PopoutComponent.qml:41-44),
+            // so two buttons need a Row wrapper.
             headerActions: Component {
-                DankActionButton {
-                    iconName: "refresh"
-                    iconColor: Theme.surfaceVariantText
-                    tooltipText: "Check now"
-                    onClicked: root.runCheck()
+                Row {
+                    spacing: Theme.spacingXS
+
+                    // Only offered when there is something to apply. Hidden
+                    // rather than disabled: "broken" and "error" states must
+                    // not look like a button you could press anyway, and
+                    // flake-update-apply refuses those reports regardless.
+                    DankActionButton {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: root.state === "updates"
+                        iconName: "rocket_launch"
+                        iconColor: Theme.primary
+                        tooltipText: "Update inputs and deploy"
+                        onClicked: root.runUpdate()
+                    }
+
+                    // Re-run the check without waiting for Monday, same as a
+                    // right click on the pill. The unit is a oneshot, so a
+                    // second press while it runs is a no-op.
+                    DankActionButton {
+                        anchors.verticalCenter: parent.verticalCenter
+                        iconName: "refresh"
+                        iconColor: Theme.surfaceVariantText
+                        tooltipText: "Check now"
+                        onClicked: root.runCheck()
+                    }
                 }
             }
 

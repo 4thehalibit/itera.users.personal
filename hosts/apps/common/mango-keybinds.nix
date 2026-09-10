@@ -114,6 +114,12 @@ in
       lock_screen               = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "Escape"; mangoCommand = "spawn_shell"; commandArguments = "dms ipc call lock lock"; };
       notifications             = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "n";      mangoCommand = "spawn_shell"; commandArguments = "dms ipc call notifications toggle"; };
       clipboard_toggle          = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "v";      mangoCommand = "spawn_shell"; commandArguments = "dms ipc call clipboard toggle"; };
+      # Replaces the cpuUsage/memUsage bar pills, which were dropped from the
+      # laptop bar (see the barConfigs comment in ../../common.nix). Those pills
+      # opened this same process-list modal on click; the modal has four tabs
+      # (Processes / Performance / Disks / System), so nothing is lost. `i` was
+      # the only free mnemonic letter.
+      system_monitor            = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "i";      mangoCommand = "spawn_shell"; commandArguments = "dms ipc call processlist toggle"; };
       # paste_clipboard REMOVED (2026-07-22): this globally grabbed CTRL+SHIFT+V
       # and ran `dms cl paste | wtype -`, which RETYPED the clipboard via a virtual
       # keyboard — wtype's keymap mismatched and produced garbage (e.g. random
@@ -201,6 +207,9 @@ in
       # popup float rules
       windowrule=isfloating:1,width:960,height:720,appid:keybinds-popup
       windowrule=isfloating:1,width:1100,height:800,appid:vonage-directory
+      # flake-update-apply, spawned by the flakeNews pill's rocket button. Needs
+      # a tty for up to four sudo prompts, hence a real terminal window.
+      windowrule=isfloating:1,width:1200,height:800,appid:flake-update
 
       # Astros palette (see hosts/common.nix for the DMS half). mango has no
       # typed color options in itera, so colors go through extraConfig; format is
