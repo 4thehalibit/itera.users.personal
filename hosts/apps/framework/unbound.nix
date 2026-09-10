@@ -88,9 +88,30 @@
       # this it is "validator iterator".
       module-config = ''"iterator"'';
 
-      # No forward-zone at all: this is a full recursive resolver, talking to the
-      # root servers and down. That is what makes it behave the same on every
-      # network.
+      # This WAS a full recursive resolver, talking to the root servers and down.
+      # That stopped working on 2026-09-10: the steering now drops both UDP/53 AND
+      # TCP/53 to entire TLD server sets, so no transport toggle can help and every
+      # delegation through an affected TLD SERVFAILs. Measured under live steering:
+      #
+      #   udp/tcp 53 -> 198.41.0.4     a.root-servers.net     OK   / OK
+      #   udp/tcp 53 -> 192.5.6.30     a.gtld-servers.net     OK   / OK      (com, net)
+      #   udp/tcp 53 -> 199.19.56.1    a0.org.afilias-nst     FAIL / FAIL    (org)
+      #   udp/tcp 53 -> 199.249.112.1  a2.org.afilias-nst     FAIL / FAIL    (org)
+      #   udp/tcp 53 -> 156.154.100.3  dns1.nic.uk            FAIL / FAIL    (uk)
+      #   udp/tcp 53 -> 8.8.8.8                               OK   / OK
+      #
+      # github.com resolved fine throughout while example.org, www.wikipedia.org and
+      # ns-1823.awsdns-35.co.uk all SERVFAILed. app.ninjarmm.com is a CNAME to an AWS
+      # ELB whose nameserver set spans com/net/org/co.uk, so it SERVFAILed too and
+      # NinjaOne remote broke. It presented as a kernel regression only because the
+      # cache carried the old answers until the next reboot.
+      #
+      # So: forward the root zone to public resolvers reachable on both transports
+      # rather than recursing. This is NOT the design rejected in the header — that
+      # one mixed the home Pi-hole in with public resolvers and lost filtering to
+      # unbound RTT-based upstream selection. No Pi-hole is listed here, so there is
+      # nothing to lose to RTT and nothing reachable only at home. The accepted cost
+      # is trusting a third party for resolution, taken over DNS that does not work.
 
       # Recurse over TCP, not UDP. The matrix above recorded `udp 53 -> 1.1.1.1 OK`
       # on 2026-08-20; that is no longer true. Re-measured 2026-09-10 under live
@@ -173,6 +194,16 @@
     # falling back to recursion would leak internal hostnames to the root servers
     # for a guaranteed NXDOMAIN. SERVFAIL is the honest answer.
     settings.forward-zone = [
+      {
+        # Root zone. Inherits the global tcp-upstream above, so these are reached
+        # over TCP/53, which the steering leaves alone at every destination measured.
+        name = ".";
+        forward-addr = [
+          "8.8.8.8"
+          "8.8.4.4"
+          "9.9.9.9"
+        ];
+      }
       {
         name = "lselectric.local.";
         forward-addr = [
