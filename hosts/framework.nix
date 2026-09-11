@@ -19,6 +19,9 @@
     # One-click kill switch for the SASE client, for when a bad tunnel takes the
     # network down and the four-command teardown is not what you want to recall.
     ./apps/framework/netskope-panic.nix
+    # Corporate RMM agent, host-scoped for the same reason as the two above. Needs
+    # the tenant .deb staged at /persist/ninjarmm-agent.deb — see the file header.
+    ./apps/framework/ninjarmm-agent.nix
   ];
 
   itera = {
