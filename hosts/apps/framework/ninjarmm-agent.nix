@@ -45,6 +45,79 @@ let
 
   agentDir = "/opt/NinjaRMMAgent";
   programfiles = "${agentDir}/programfiles";
+
+  # The tools the agent needs to find, as one directory of symlinks. This is
+  # both the unit PATH and the content bind-mounted over /usr/bin and /bin for
+  # the agent's own mount namespace, so the two can never drift: add a package
+  # here and it appears in both places.
+  #
+  # coreutils carries `env` and bashInteractive carries `sh`, which the bind
+  # would otherwise hide — the real /usr/bin and /bin hold nothing else on this
+  # host, so this set is a superset of what it replaces.
+  #
+  # file / networkmanager (nmcli) / parted are for the monitoring inventory; the
+  # rest is so console-dispatched scripts have a working userland.
+  fhsTools = pkgs.buildEnv {
+    name = "ninjarmm-fhs-tools";
+    paths = with pkgs; [
+      bashInteractive
+      coreutils
+      curl
+      file
+      gawk
+      gnugrep
+      gnused
+      gnutar
+      gzip
+      iproute2
+      networkmanager
+      parted
+      procps
+      systemd
+      util-linux
+    ];
+    pathsToLink = [ "/bin" ];
+  };
+
+  # Give the unit an FHS /usr/bin and /bin, visible ONLY inside its own mount
+  # namespace. Nothing changes for the rest of the system.
+  #
+  # This exists because the agent's util check does not consult $PATH. It walks
+  # a compiled-in FHS list — /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:
+  # /sbin:/bin, verified in the binary's strings — and on stock NixOS /usr/bin
+  # holds only `env` and /bin only `sh`, so every probe misses and the console
+  # reports the host as unmonitorable:
+  #
+  #   Target machine distributive is not ready to collect monitoring data,
+  #   because of missing utils: file, nmcli, top, parted, bash, ls, pgrep, who.
+  #
+  # bash, ls, top, pgrep and who were in the unit PATH when that fired. That is
+  # the whole point: extending PATH alone can never fix it.
+  #
+  # It also covers what the check does not report — the agent hardcodes
+  # /bin/bash, and the console's scripts are Debian-flavoured, so they arrive
+  # with #!/bin/bash shebangs.
+  #
+  # WHY NOT services.envfs, which is the usual NixOS answer here. envfs resolves
+  # /usr/bin/<name> against the requesting process's PATH, and it reads that PATH
+  # by ptrace-attaching to the caller. itera sets
+  # boot.kernel.sysctl."kernel.yama.ptrace_scope" = 3, which disables ptrace
+  # outright, so every lookup fails. It was tried on this host and the kernel
+  # logged the refusal for each one:
+  #
+  #   ptrace attach of "/opt/NinjaRMMAgent/programfiles/ninjarmm-linagent"
+  #     was attempted by ".../mount.envfs none /usr/bin -o ..."
+  #
+  # Worse than merely not working: envfs force-disables the activation scripts
+  # that create /usr/bin/env and /bin/sh and serves them from the mount instead,
+  # so with ptrace blocked the host loses /bin/sh entirely. Do not re-enable it
+  # here. Scope 3 is a one-way latch that cannot be lowered without a reboot,
+  # and lowering a kernel hardening setting system-wide to satisfy one agent is
+  # the wrong trade on a machine that also runs corporate EDR.
+  fhsBinds = [
+    "${fhsTools}/bin:/usr/bin"
+    "${fhsTools}/bin:/bin"
+  ];
 in
 {
   # Unpack the vendor .deb into the persisted, mutable agent directory, doing by
@@ -137,32 +210,7 @@ in
     # inherits this unit's PATH when it does. Without one it gets systemd's
     # bare default and every console-dispatched script that calls anything at
     # all fails with "command not found".
-    #
-    # This PATH is ALSO what makes services.envfs (see below) able to answer the
-    # agent's /usr/bin probes, because envfs resolves per requesting process
-    # against that process's own PATH. The two are a pair: adding a tool the
-    # agent needs means adding it HERE, not to environment.systemPackages.
-    #
-    # file / networkmanager / parted are here for the monitoring inventory
-    # rather than for scripts — they are the three the agent's util check named
-    # that were not already pulled in by coreutils, procps and bash.
-    path = with pkgs; [
-      bashInteractive
-      coreutils
-      curl
-      file
-      gawk
-      gnugrep
-      gnused
-      gnutar
-      gzip
-      iproute2
-      networkmanager
-      parted
-      procps
-      systemd
-      util-linux
-    ];
+    path = [ fhsTools ];
 
     serviceConfig = {
       Type = "simple";
@@ -173,6 +221,10 @@ in
       # The vendor's own value. It is generous because a shutdown mid-job waits
       # for the job.
       TimeoutStopSec = 90;
+
+      # See fhsBinds above. Child processes inherit the namespace, so scripts
+      # the console dispatches get the same FHS view the agent does.
+      BindReadOnlyPaths = fhsBinds;
     };
   };
 
@@ -182,9 +234,11 @@ in
   systemd.services.ninjarmm-patcher = {
     description = "NinjaOne agent patcher";
     after = [ "network.target" ];
+    path = [ fhsTools ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${programfiles}/ninjarmm-linagent-patcher";
+      BindReadOnlyPaths = fhsBinds;
     };
     unitConfig.ConditionPathExists = "${programfiles}/ninjarmm-linagent-patcher";
   };
@@ -199,39 +253,6 @@ in
       Unit = "ninjarmm-patcher.service";
     };
   };
-
-  # FHS paths, which this agent needs and NixOS does not have. Without it the
-  # console reports the host as unmonitorable:
-  #
-  #   Target machine distributive is not ready to collect monitoring data,
-  #   because of missing utils: file, nmcli, top, parted, bash, ls, pgrep, who.
-  #
-  # Note that bash, ls, top, pgrep and who are in the unit PATH above and were
-  # STILL reported missing. That is the actual finding: the agent's util check
-  # does not consult $PATH at all. It walks a compiled-in FHS list —
-  # /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin — and on this
-  # host /usr/bin holds only `env` and /bin only `sh`, so every probe misses.
-  # Extending the unit PATH alone can therefore never fix this.
-  #
-  # envfs makes /usr/bin (and /bin, bind-mounted onto it) a FUSE filesystem that
-  # answers a lookup by resolving the name against the REQUESTING process's
-  # PATH. So /usr/bin/parted becomes real for the agent precisely because parted
-  # is in the unit PATH above, while nothing is added to the system profile.
-  #
-  # It also covers the other half of this problem, which the util check does not
-  # report: the agent hardcodes /bin/bash (verified in the binary's strings) and
-  # the console's scripts are written for Debian, so they arrive with #!/bin/bash
-  # shebangs. NixOS ships /bin/sh and nothing else.
-  #
-  # Chosen over symlinking the named utils into /usr/bin with tmpfiles because
-  # that fixes exactly today's list and nothing an IT-authored script reaches for
-  # tomorrow. The envfs module handles the tmpfs-root case specifically (it force
-  # -disables the usrbinenv/binsh activation scripts and creates the stage-1
-  # directories), which matters here.
-  #
-  # Enabled from this file rather than hosts/common.nix on purpose: the agent is
-  # the only reason it is on, so removing the agent should remove it too.
-  services.envfs.enable = true;
 
   # Impermanence. Everything about this agent is mutable state living under one
   # hard-coded path: the binaries (rewritten by the patcher), agent.conf (which
