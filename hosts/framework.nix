@@ -235,8 +235,14 @@
   # If white flicker persists, the next value to try is 0x40410 — add 0x400
   # (DC_DISABLE_REPLAY). That is the more targeted move than sg_display=0 above,
   # so try it before pinning a kernel.
+  # reboot=acpi was dropped 2026-09-16. It existed for the ~40min firmware EFI
+  # reset hang on BIOS 03.05, which the 04.05 update fixed (confirmed by a
+  # capsule-flash reboot 2026-07-23, an ordinary reboot the same day, and a
+  # near-instant reboot 2026-09-16). If a reboot ever hangs ~40min again after a
+  # clean shutdown, restore it as the FIRST list element here:
+  #   "reboot=acpi"
+  # Diagnose via gaps in `journalctl --list-boots`, not by boot time.
   boot.kernelParams = lib.mkAfter [
-    "reboot=acpi"
     "amdgpu.sg_display=0"
     "amdgpu.dcdebugmask=0x40010"
   ];
