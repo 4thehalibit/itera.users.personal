@@ -206,9 +206,19 @@
       }
       {
         name = "lselectric.local.";
+        # Four DCs, not two, because the NPA published set is not stable across
+        # uplinks. Verified off-prem on 2026-09-16 (hotspot, ethernet unplugged):
+        # .75.10 and .80.31 had dropped out of `ip route show table 9` and both
+        # timed out, while .9.0.251 and .80.33 were steered and answered
+        # ls-corp-cluster.lselectric.local with its 100.64.0.1 synthetic. On-prem
+        # the first pair works. All four are in the tenant's published list
+        # (npadebuglog.log), so which ones are steered is the client's call, not
+        # policy's — list them all and let unbound fail over.
         forward-addr = [
           "10.2.75.10"
           "10.10.80.31"
+          "10.9.0.251"
+          "10.10.80.33"
         ];
         # Explicit, though it now matches the default: the DCs stay on UDP. Their
         # TCP/53 behaved inconsistently in testing, and these are tunnelled
