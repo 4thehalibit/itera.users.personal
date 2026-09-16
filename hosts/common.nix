@@ -16,23 +16,20 @@
     ./apps/common/cider.nix
     ./apps/common/vesktop.nix
     ./apps/common/caprine.nix
-    ./apps/common/linphone.nix
     ./apps/common/vlc.nix
     ./apps/common/uxplay.nix # AirPlay receiver: iPhone screen-cast to this machine (run `airplay`)
-    ./apps/common/nautilus.nix
     ./apps/common/eml-viewer.nix # lightweight .eml viewer (renders to browser)
     ./apps/common/phisher-triage.nix # `phisher` PhishER triage CLI (~/Documents/phisher-triage)
     ./apps/common/dev-tools.nix
+    ./apps/common/flake-preflight.nix # `flake-eval` preflight + weekly input check
 
     # Kept personal automations / tools.
     ./apps/common/teams-music-pause.nix # pause music when Teams grabs the mic
-    ./apps/common/vonage-directory.nix # Super+Shift+P Linphone-contacts lookup
     ./apps/common/keybinds-cheatsheet.nix # Super+F1 keybind/alias popup
     ./apps/common/personal-commands.nix # fixhdmi, claude, freshworks, deploy, rebuild
     ./apps/common/mango-keybinds.nix # personal mango keybinds (hardware-agnostic)
     ./apps/common/wezterm.nix # force OpenGL front-end (WebGpu crashes 2nd window on amdgpu)
     ./apps/common/wallpaper.nix # Astros wallpaper + lock/greeter wallpaper paths
-    ./apps/common/flake-update-check.nix # weekly upstream flake check + `flake-news`
   ];
 
   # Git identity. No upstream itera battery for this yet, so write ~/.gitconfig
@@ -69,21 +66,24 @@
   # Allow vesktop's pinned electron (see apps/common/vesktop.nix note).
   nixpkgs.config.permittedInsecurePackages = [ "electron-40.10.5" ];
 
-  # wl-clipboard: wl-copy/wl-paste for CLI clipboard access (already referenced
-  # by apps/common/vonage-directory.nix via store path). NOTE: `wtype` was added
-  # here on 2026-07-22 to feed the CTRL+SHIFT+V `dms cl paste | wtype -` keybind,
-  # but wtype garbled the text (keymap mismatch); the keybind was removed in
-  # favour of native app paste, so wtype is gone too. See mango-keybinds.nix.
-  environment.systemPackages = with pkgs; [ wl-clipboard ];
-
-  # Run Electron/Chromium apps as native Wayland instead of XWayland. This is the
-  # switch teams-for-linux's wrapper gates its screen-share flags on: with
-  # NIXOS_OZONE_WL set it launches with --ozone-platform-hint=auto and
-  # --enable-features=...,WebRTCPipeWireCapturer, so Teams/Vivaldi screen sharing
-  # can reach the wlroots PipeWire screencast portal (xdg-desktop-portal-wlr).
-  # Without it Teams fell back to XWayland and screen share silently did nothing.
-  # sessionVariables apply at login, so log out/in after deploying.
-  environment.sessionVariables.NIXOS_OZONE_WL = "1";
+  # NOTE: nothing here configures screen sharing, deliberately. It has TWO halves
+  # and both are upstream itera defaults now:
+  #
+  #   1. NIXOS_OZONE_WL — set by desktop/mango.nix as `mkDefault "1"`. It is what
+  #      makes teams-for-linux's wrapper emit --ozone-platform-hint=auto and
+  #      --enable-features=...,WebRTCPipeWireCapturer. Without it Teams runs under
+  #      XWayland and the share button silently does nothing.
+  #   2. xdg-desktop-portal-wlr's source picker — desktop/screencast.nix sets
+  #      `chooser_cmd` to the DMS launcher plugin (`#share` trigger). Without it
+  #      xdpw falls back to a bare slurp crosshair, then six dmenu programs itera
+  #      does not ship, then "[ERROR] wlroots: no output found" — and with more
+  #      than one output there is no auto-pick fallback at all, so every request
+  #      dies. It is also what makes single-WINDOW sharing possible, not just a
+  #      whole monitor, which matters on the 5120-wide ultrawide.
+  #
+  # If screen sharing breaks again, check BOTH before writing anything here. The
+  # live picker config is a store path on the xdpw unit's --config= flag, NOT
+  # /etc/xdg/xdg-desktop-portal-wlr/config (that path does not exist).
 
   # Recurring "DNS down" fix (memory: DNS/DNSSEC). systemd-resolved was rejecting
   # unsigned answers; disable DNSSEC validation. (New option path; the old
@@ -107,6 +107,15 @@
 
     # Desktop: mango (dwl/wlroots) + DankMaterialShell. mango is opt-in.
     desktop.mango.enable = true;
+
+    # File manager: nautilus, not itera's nemo default. Swapping the PACKAGE
+    # rather than disabling the battery and installing nautilus separately keeps
+    # everything else the battery wires up — gvfs (network/trash/mounts),
+    # tumbler (thumbnails) and dconf — which nautilus wants just as much as nemo
+    # does. The mime handler below is the battery's other half; it hardcodes
+    # nemo.desktop as a mkDefault, so without the override a double-clicked
+    # folder would still open the file manager that is no longer installed.
+    desktop.fileManager.package = pkgs.nautilus;
 
     # Auto idle: lock after 8 minutes, suspend after 10 (DMS owns idle/lock/
     # suspend via ~/.config/DankMaterialShell/settings.json; timeouts are in
@@ -195,7 +204,13 @@
       #                  registered below); the toggle underneath is the same
       #                  SessionService call, so this pill, the Control Center
       #                  tile and `dms ipc call inhibit toggle` stay in sync.
-      #   flakeNews      upstream flake-input report (apps/common/flake-update-check.nix)
+      #   iteraUpdate    itera's own update pill (desktop/update-indicator.nix).
+      #                  READ-ONLY and itera-only: it compares the itera rev this
+      #                  system was built from against the repository head and
+      #                  prints the command. It never bumps a lock, pushes, or
+      #                  rebuilds, and it does not watch nixpkgs or the other
+      #                  inputs in this flake's lock. Costs an unauthenticated
+      #                  github.com poll every 30 min (pollIntervalSeconds).
       barConfigs = [
         # Laptop panel: 1600 logical px. Keep `id = "default"` — DMS refuses to
         # delete the bar with that id, so it is the one that must always exist.
@@ -235,7 +250,7 @@
             { id = "systemTray"; trayMaxVisibleItems = 3; }
             "separator"
             # wants attention
-            "flakeNews"
+            "iteraUpdate"
             "notificationButton"
             "separator"
             # controls
@@ -282,7 +297,7 @@
             { id = "memUsage"; minimumWidth = false; }
             "separator"
             # wants attention
-            "flakeNews"
+            "iteraUpdate"
             "notificationButton"
             "separator"
             # controls
@@ -299,30 +314,11 @@
     # manifest id.
     programs.dankMaterialShell.plugins.caffeine.src = ./apps/common/dms-caffeine;
 
-    # itera's own update pill (upstream #155, desktop/update-indicator.nix)
-    # compares only the itera rev this system was built from against the
-    # repository head. apps/common/flake-update-check.nix already watches every
-    # input in this flake's lock, evaluates the update before offering it, and
-    # owns the `flakeNews` pill in barConfigs above. The upstream widget would
-    # never render anyway (barConfigs is replaced wholesale here, so its
-    # `iteraUpdate` id is dropped), so this only stops the half-hourly
-    # unauthenticated poll of github.com that comes with it.
-    desktop.updateIndicator.enable = false;
-
-    # Extra home dirs to persist beyond itera's curated set (which already keeps
-    # .config/.local/.cache/.ssh/.claude/Documents/Downloads/Pictures). This holds
-    # data restored from the Ventoy backup by install.sh — without persisting it
-    # the restored copy would vanish on the first wiped-root boot.
-    #   Vonage — Linphone contacts CSV/VCF used by the Super+Shift+P popup
-    #            (see apps/common/vonage-directory.nix, which flagged this gap)
-    #
-    # Pictures used to be listed here too. itera adopted it into the curated
-    # default set (2026-08-19, core/impermanence.nix), with the same
-    # never-auto-cleared semantics, and environment.persistence asserts on
-    # duplicate directories — so listing it here now fails the build outright.
-    impermanence.users.vwestberg.directories = [
-      "Vonage"
-    ];
+    # NOTE: do NOT list a directory here that itera already persists by default
+    # (.config/.local/.cache/.ssh/.claude/Documents/Downloads/Pictures).
+    # environment.persistence asserts on duplicate directories, so a duplicate
+    # fails the build outright — Pictures was adopted upstream 2026-08-19
+    # (core/impermanence.nix) and had to be dropped from here for that reason.
 
     users.vwestberg = {
       description = "Vincent Westberg";
@@ -370,17 +366,7 @@
     }
   ];
 
-  # DankMaterialShell greeter/lock should not require a fingerprint
-  # (eiros applications/dankshell_pam.nix).
-  security.pam.services.dankshell.fprintAuth = false;
-
-  # earlyoom: prefer killing browsers under memory pressure
-  # (eiros applications/earlyoom.nix, re-expressed as the plain NixOS module).
-  services.earlyoom = {
-    enable = true;
-    extraArgs = [
-      "--prefer"
-      "(^|/)(firefox|chromium|vivaldi)$"
-    ];
-  };
+  # Other half of the nautilus swap above (itera's file-manager battery sets
+  # this to "nemo.desktop" with mkDefault).
+  xdg.mime.defaultApplications."inode/directory" = "nautilus.desktop";
 }

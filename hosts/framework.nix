@@ -1,5 +1,5 @@
 # framework — Framework 16 (AMD Ryzen 7040) work laptop, hostname LS-04391.
-{ itera, pkgs, ... }:
+{ itera, lib, pkgs, ... }:
 {
   imports = [
     # Framework 16 hardware quirks, re-exported by itera from nixos-hardware.
@@ -153,19 +153,35 @@
   # and there is NO firmware crash / driver reset / beacon-loss in the kernel log,
   # so mac80211 never notices the dead link.
   #
-  # Disabling power-save (below) was the first fix but is INSUFFICIENT — re-checked
-  # 2026-07-22, powersave=2 is applied yet the stall recurs. Next targeted attempt
-  # is PCIe ASPM: force the mt7921e out of ASPM power management via a module
-  # option (less blunt than a global `pcie_aspm=off`). `iw` is added so the runtime
-  # power_state / beacon counters can be sampled live during a stall.
-  networking.networkmanager.wifi.powersave = false;
-  boot.extraModprobeConfig = "options mt7921e disable_aspm=1";
-  environment.systemPackages = [ pkgs.iw ];
-
-  # dhcpcd runs redundantly alongside NetworkManager (NM does its own DHCP for
-  # managed interfaces). The standalone dhcpcd was segfaulting and fighting over
-  # the DHCPv6 socket (`Address already in use`); disable it to remove the noise.
-  networking.dhcpcd.enable = false;
+  # DELIBERATELY AT BASELINE — there is no wifi configuration in this file, on
+  # purpose. Two workarounds used to live here and both are gone:
+  #
+  #   networking.networkmanager.wifi.powersave = false
+  #     Proven insufficient (re-checked 2026-07-22: applied as NM powersave=2,
+  #     stall recurred). Note the option is `nullOr bool`, so REMOVING it is not
+  #     "powersave off" — it is "NixOS writes nothing and NM uses its own
+  #     default". That is a real behaviour change, not a no-op.
+  #
+  #   boot.extraModprobeConfig = "options mt7921e disable_aspm=1"
+  #     The PCIe-ASPM hypothesis. Never confirmed.
+  #
+  # WHY BASELINE: lcleveland/itera.personal runs the SAME Framework 16 with the
+  # SAME MT7922 (its framework.nix skips the MT7922 Bluetooth quirks, so the card
+  # is identical) and configures NOTHING for wifi — no powersave, no modprobe, no
+  # NetworkManager settings — and does not see this stall. itera sets nothing
+  # either. So the config was never the fix, and a modprobe hack forcing a driver
+  # out of ASPM is a plausible CAUSE rather than a cure.
+  #
+  # This makes the next observation actually mean something:
+  #   stall persists at baseline -> the difference is hardware, firmware or RF
+  #     environment, not this file. Stop editing Nix; compare BIOS and mt7921e
+  #     firmware versions against the other machine.
+  #   stall disappears at baseline -> one of the two workarounds above was
+  #     causing it. Re-add them one at a time, never together.
+  #
+  # Runtime relief while a stall is happening is unchanged:
+  #   systemctl restart NetworkManager
+  # To sample power_state / beacon counters live: nix shell nixpkgs#iw
 
   # Reboot safety net: a stuck final unmount (the always-connected Framework
   # exFAT storage module didn't unmount cleanly) once hung shutdown for ~40 min
@@ -191,7 +207,39 @@
   # reported not to help. Disabling scatter-gather display changes framebuffer
   # placement and is the most-cited 780M flicker workaround. If it still returns
   # after a few days, dodge the regression by pinning the 6.12 LTS kernel here.
-  boot.kernelParams = [ "reboot=acpi" "amdgpu.sg_display=0" ];
+  # amdgpu.dcdebugmask=0x40010: panel goes DIM at 97-100% brightness (correct
+  # below that). Since 6.14 amdgpu applies a "custom brightness curve" derived
+  # from the panel's EDID luminance data, and it is broken at the top of the
+  # range on the BOE panels the Framework 16 ships behind an AMD iGPU:
+  # scale_input_to_fw() omits the `- min` term its own comment implies, so full
+  # brightness scales to 268 and overshoots AMDGPU_MAX_BL_LEVEL (0xFF); the
+  # scale_fw_to_input() round-trip then exceeds 65535 and wraps
+  # backlight_pwm_u16_16 to a near-minimum duty.
+  #
+  # 0x40010 = DC_DISABLE_CUSTOM_BRIGHTNESS_CURVE (0x40000) OR'd with the 0x10
+  # (DC_DISABLE_PSR) that itera's base already sets — so this SUPERSEDES that
+  # value rather than fighting it, and PSR stays disabled. Ported from
+  # lcleveland/itera.personal hosts/framework.nix, which runs it on this same
+  # laptop and panel.
+  #
+  # mkAfter, not mkForce: nixos-hardware sets its 0x10 as a plain list element
+  # rather than mkDefault, and kernelParams is a list that concatenates, so
+  # priority cannot override it. Both land on the cmdline and the LAST
+  # assignment wins for module params — mkAfter is what guarantees ours is last.
+  # A plain list happens to sort after itera's today, but that is an accident of
+  # the current import order, not a guarantee.
+  #
+  # Verify after rebooting:
+  #   cat /sys/module/amdgpu/parameters/dcdebugmask   # expect 262160 (0x40010)
+  #
+  # If white flicker persists, the next value to try is 0x40410 — add 0x400
+  # (DC_DISABLE_REPLAY). That is the more targeted move than sg_display=0 above,
+  # so try it before pinning a kernel.
+  boot.kernelParams = lib.mkAfter [
+    "reboot=acpi"
+    "amdgpu.sg_display=0"
+    "amdgpu.dcdebugmask=0x40010"
+  ];
 
   # MT7922 Bluetooth: eiros pinned kernels to dodge a btmtk Oops; the fix was
   # expected upstream. On itera/unstable it is likely already fixed — VERIFY BT

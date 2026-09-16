@@ -20,8 +20,8 @@
 #
 # Deviations from the eiros target (intentional itera app adoptions, kept on the eiros
 # chords): launch_terminal spawns wezterm (was ghostty) on SUPER+Return; launch_editor
-# spawns zeditor/Zed (was code) on SUPER+SHIFT+n. The two terminal-popups
-# (keybinds_cheatsheet, vonage_directory) follow the terminal adoption and run under
+# spawns zeditor/Zed (was code) on SUPER+SHIFT+n. The terminal popup
+# (keybinds_cheatsheet) follows the terminal adoption and runs under
 # wezterm rather than ghostty so their float windowrules match wezterm's app_id.
 { lib, ... }:
 let
@@ -143,7 +143,6 @@ in
 
       # --- popups (launched in wezterm; matched floating via extraConfig) ----
       keybinds_cheatsheet       = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "F1";     mangoCommand = "spawn"; commandArguments = "wezterm start --class keybinds-popup -- keybinds-popup"; };
-      vonage_directory          = { modifierKeys = [ "SUPER" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "p";      mangoCommand = "spawn"; commandArguments = "wezterm start --class vonage-directory -- vonage-directory-popup"; };
 
       # --- keyboard LED matrix brightness (was dropped in the prior port) ----
       # kbd_brightness_down/up live with the hardware in apps/framework/kbd-typing-leds.nix.
@@ -206,10 +205,6 @@ in
 
       # popup float rules
       windowrule=isfloating:1,width:960,height:720,appid:keybinds-popup
-      windowrule=isfloating:1,width:1100,height:800,appid:vonage-directory
-      # flake-update-apply, spawned by the flakeNews pill's rocket button. Needs
-      # a tty for up to four sudo prompts, hence a real terminal window.
-      windowrule=isfloating:1,width:1200,height:800,appid:flake-update
 
       # Astros palette (see hosts/common.nix for the DMS half). mango has no
       # typed color options in itera, so colors go through extraConfig; format is

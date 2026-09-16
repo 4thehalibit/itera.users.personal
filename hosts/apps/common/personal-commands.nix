@@ -43,6 +43,22 @@ let
     set -e
     cd "$HOME/Documents/itera.users.personal"
     ${pkgs.git}/bin/git add -A
+    # Preflight: `itera update` below builds from the REMOTE, so without this a
+    # config that does not evaluate is already pushed by the time the build
+    # fails. flake-eval comes from apps/common/flake-preflight.nix.
+    #
+    # AFTER `git add -A`, not before: nix's git fetcher cannot see UNTRACKED
+    # files in a dirty tree, so a brand-new module would be invisible to an
+    # earlier eval and the check would pass on a config that is not the one
+    # about to be pushed. Staging makes it visible. A failure here leaves the
+    # files staged but uncommitted, which the next deploy re-adds anyway.
+    if [ -z "''${DEPLOY_SKIP_CHECK:-}" ]; then
+      echo "preflight: evaluating config..."
+      flake-eval . >/dev/null || {
+        echo "config does not evaluate — nothing committed or pushed." >&2
+        exit 1
+      }
+    fi
     ${pkgs.git}/bin/git diff --cached --quiet || ${pkgs.git}/bin/git commit -m "''${1:-update config}"
     ${pkgs.git}/bin/git push
     exec itera update

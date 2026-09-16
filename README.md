@@ -23,7 +23,7 @@ Root `/` is a tmpfs wiped every boot. Persisted `$HOME` paths (itera defaults):
 `.config` (incl. `~/.config/vivaldi` = **browser history**), `.local/share`,
 `.local/state`, `.cache`, `.ssh`, `.claude`, `Documents`, `Downloads`, `.claude.json`.
 Anything else in `~` is gone on reboot — see the migration plan for the backup
-checklist and any extra persist paths (`Pictures`, `Vonage`, config checkout).
+checklist and any extra persist paths (`Pictures`, config checkout).
 
 ## What was ported from eiros (personal items)
 
@@ -31,10 +31,10 @@ checklist and any extra persist paths (`Pictures`, `Vonage`, config checkout).
 - Mango keybinds (arrow focus/swap, app launchers, media cluster, web apps) — `hosts/apps/common/mango-keybinds.nix`
 - NinjaOne (via the `ninjarmm-ncplayer` flake, no more impure `.deb`)
 - Git identity, DNSSEC "DNS down" fix, `deploy`/`rebuild`/`fixhdmi`/`claude`/`freshworks` commands
-- Vonage directory popup (Super+Shift+P), keybind cheatsheet (Super+F1)
+- Keybind cheatsheet (Super+F1)
 - Framework LED-matrix typing effects **+ a new toggle** (Super+Shift+L), F7/F8 brightness
 - Teams auto-pause music, Thunderbolt-dock PCIe rescan
-- Apps: teams, zoom, linphone, vesktop, caprine, cider, yubico, onlyoffice, nautilus, dev tools
+- Apps: teams, zoom, vesktop, caprine, cider, yubico, onlyoffice, dev tools (nautilus replaces itera's nemo)
 
 ## What was dropped in favor of itera defaults
 
@@ -57,7 +57,7 @@ real password.
 
 **Auto-restore:** with the Ventoy still plugged in, `install.sh` then seeds the
 new `/persist` subvolume from the newest `nixos-backup-*` folder on it — home
-data (`Documents`, `Pictures`, `Vonage`, `.claude`/`.claude.json`, Vivaldi
+data (`Documents`, `Pictures`, `.claude`/`.claude.json`, Vivaldi
 profile) and saved Wi-Fi (NetworkManager profiles) — so the first boot already
 has your files and networks. It's best-effort: if no Ventoy/backup is found it
 skips and the install still succeeds. Disable with `RESTORE=0`, or point it at an
