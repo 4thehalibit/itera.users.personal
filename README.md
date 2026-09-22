@@ -8,9 +8,11 @@ Tracks **nixos-unstable** (itera's channel).
 
 ## Host
 
-| Flake attr  | Hostname   | Machine                 | Notes                                        |
-|-------------|------------|-------------------------|----------------------------------------------|
-| `framework` | `LS-04391` | Framework 16 (7040 AMD) | fingerprint, printing, three monitors, LED matrix |
+| Flake attr  | Hostname       | Machine                 | Notes                                        |
+|-------------|----------------|-------------------------|-----------------------------------------------|
+| `framework` | `LS-04391`     | Framework 16 (7040 AMD) | fingerprint, printing, three monitors, LED matrix |
+| `generic`   | `LS-EMERGENCY` | any spare x86_64 laptop | emergency fallback — no board quirks, `itera.hardware.cpu = "auto"` (facter detects AMD/Intel live), no monitor config, keeps corp access (netskope/falcon/ninjarmm). Install with `HOST=generic curl -sSL .../install.sh \| sudo bash`. |
+| `personal`  | `vwestberg-personal` | any x86_64 machine | zero corp modules (no netskope/falcon/ninjarmm) — for after L&S. Same hardware-agnostic base as `generic`. Install with `HOST=personal curl -sSL .../install.sh \| sudo bash`. |
 
 Uses itera's declarative disk layout (`disko`) + tmpfs root (`impermanence`) —
 **installing wipes the target disk.** The disk is chosen at install time with
@@ -45,24 +47,21 @@ checklist and any extra persist paths (`Pictures`, config checkout).
 
 ## Install (from a NixOS unstable live ISO)
 
-Back up first (see the migration plan). Then:
+**No auto-restore.** Back up whatever you need manually BEFORE wiping
+(`Documents`, `.claude`/`.claude.json`, Wi-Fi `.nmconnection` files, Vivaldi
+profile) and restore it manually after first boot. Nothing on this list lives
+in this repo.
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/4thehalibit/itera.users.personal/main/install.sh | sudo bash
 ```
 
+Pick `HOST=generic` or `HOST=personal` for non-Framework hardware — see the
+Host table above.
+
 It prompts for the disk, confirms the wipe, and runs `disko-install`. After it
 finishes: reboot, log in as `vwestberg` / `changeme`, then **`passwd`** to set a
 real password.
-
-**Auto-restore:** with the Ventoy still plugged in, `install.sh` then seeds the
-new `/persist` subvolume from the newest `nixos-backup-*` folder on it — home
-data (`Documents`, `Pictures`, `.claude`/`.claude.json`, Vivaldi
-profile) and saved Wi-Fi (NetworkManager profiles) — so the first boot already
-has your files and networks. It's best-effort: if no Ventoy/backup is found it
-skips and the install still succeeds. Disable with `RESTORE=0`, or point it at an
-already-mounted dir with `BACKUP_DIR=/path`. Wi-Fi passwords live only on the
-Ventoy, never in this repo.
 
 ## Rebuild
 

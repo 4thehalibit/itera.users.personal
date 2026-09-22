@@ -93,6 +93,10 @@
       nixosConfigurations = {
         # Framework 16 (AMD 7040), hostname LS-04391.
         framework = mkHost ./hosts/framework.nix;
+        # Emergency spare-hardware host, no board-specific quirks. See hosts/generic.nix.
+        generic = mkHost ./hosts/generic.nix;
+        # No corp modules (netskope/falcon-sensor/ninjarmm). See hosts/personal.nix.
+        personal = mkHost ./hosts/personal.nix;
       };
     };
 }
