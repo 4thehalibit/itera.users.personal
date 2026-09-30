@@ -37,6 +37,28 @@ let
     exec itera rebuild "$@"
   '';
 
+  # ninjaone-update: bump the ninjarmm-ncplayer flake input to latest and deploy.
+  ninjaoneUpdate = pkgs.writeShellScriptBin "ninjaone-update" ''
+    set -e
+    cd "$HOME/Documents/itera.users.personal"
+    ${pkgs.nix}/bin/nix flake lock --update-input ninjarmm-ncplayer
+    exec deploy "chore: bump ninjarmm-ncplayer"
+  '';
+
+  # ninjaone-pin [rev]: lock ninjarmm-ncplayer to a specific git rev and deploy.
+  # No arg prints the currently locked rev (note it down before updating, so
+  # there is something to pin back to if the update breaks).
+  ninjaonePin = pkgs.writeShellScriptBin "ninjaone-pin" ''
+    set -e
+    cd "$HOME/Documents/itera.users.personal"
+    if [ -z "''${1:-}" ]; then
+      ${pkgs.jq}/bin/jq -r '.nodes["ninjarmm-ncplayer"].locked.rev' flake.lock
+      exit 0
+    fi
+    ${pkgs.nix}/bin/nix flake lock --override-input ninjarmm-ncplayer "github:lcleveland/ninjarmm-ncplayer/$1"
+    exec deploy "chore: pin ninjarmm-ncplayer to $1"
+  '';
+
   # deploy [msg]: commit + push the local checkout, then update + rebuild.
   # Expects the checkout at ~/Documents/itera.users.personal (a persisted path).
   deploy = pkgs.writeShellScriptBin "deploy" ''
@@ -74,7 +96,10 @@ in
     freshworks
     rebuild
     deploy
+    ninjaoneUpdate
+    ninjaonePin
     pkgs.distrobox
     pkgs.wlr-randr
+    pkgs.jq
   ];
 }
