@@ -23,6 +23,26 @@
         "type": "github"
       }
     },
+    "claude-desktop": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790682776,
+        "narHash": "sha256-u5LQQQ2o5jaoob1QhHd9W4ErK9mTPQ0UzPrk9PIeK3E=",
+        "owner": "nmcbride",
+        "repo": "claude-desktop-nix",
+        "rev": "03584ef67c46d4c72bf522f25cbeec02663d63de",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nmcbride",
+        "repo": "claude-desktop-nix",
+        "type": "github"
+      }
+    },
     "crane": {
       "locked": {
         "lastModified": 1789760033,
@@ -709,6 +729,7 @@
     },
     "root": {
       "inputs": {
+        "claude-desktop": "claude-desktop",
         "falcon-sensor": "falcon-sensor",
         "hjem": "hjem",
         "itera": "itera",

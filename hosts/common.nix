@@ -63,6 +63,17 @@
   # URL handler. Replaces the old impure ~/private/*.deb + --impure workflow.
   programs.ninjarmm-ncplayer.enable = true;
 
+  # Claude desktop app: Chat, Cowork, and Claude Code in one window. Cowork's VM
+  # sandbox needs /dev/kvm; the module adds listed users to the kvm group and
+  # wires the OVMF/virtiofsd/vhost_vsock pieces the app's Linux build hardcodes.
+  # First login after a rebuild needs a logout/login (kvm group) — see
+  # https://github.com/nmcbride/claude-desktop-nix for the manual-test path if
+  # Cowork still says unsupported after that.
+  programs.claude-desktop = {
+    enable = true;
+    cowork.kvmUsers = [ "vwestberg" ];
+  };
+
   # Allow vesktop's pinned electron (see apps/common/vesktop.nix note).
   nixpkgs.config.permittedInsecurePackages = [ "electron-40.10.5" ];
 

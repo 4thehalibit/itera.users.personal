@@ -46,6 +46,15 @@
       url = "github:lcleveland/falcon-sensor";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Claude desktop app (Chat/Cowork/Claude Code GUI), official Linux .deb
+    # repackaged for NixOS. Personal tool, not corp infra, so it rides in the
+    # every-host `modules` list below like ninjarmm-ncplayer rather than being
+    # host-scoped through specialArgs. Enabled in hosts/common.nix.
+    claude-desktop = {
+      url = "github:nmcbride/claude-desktop-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -55,6 +64,7 @@
       ninjarmm-ncplayer,
       netskope,
       falcon-sensor,
+      claude-desktop,
       ...
     }:
     let
@@ -74,6 +84,7 @@
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default
+            claude-desktop.nixosModules.default
             # falcon-sensor's overlay makes pkgs.falcon-sensor-{fetch,status,tray}
             # resolve. The module falls back to callPackage without it, but the
             # tray icon override in hosts/apps/framework/falcon-sensor.nix needs
