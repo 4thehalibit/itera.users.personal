@@ -372,6 +372,21 @@
     };
   };
 
+  # itera.users.vwestberg.extraGroups above does NOT reach real group
+  # membership (confirmed via the built users-groups.json: wheel/
+  # networkmanager/docker/input/dialout all came back with no vwestberg
+  # member, despite description/initialPassword from that same block landing
+  # fine). Declare the real option directly too — extraGroups is additive
+  # (list-merged), so this does not conflict with itera's block.
+  users.users.vwestberg.extraGroups = [
+    "wheel"
+    "networkmanager"
+    "libvirtd"
+    "docker"
+    "input"
+    "dialout" # LED-matrix serial + kbd backlight (framework)
+  ];
+
   # nixos-rebuild without a password prompt (eiros applications/sudo.nix).
   security.sudo.extraRules = [
     {
