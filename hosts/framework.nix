@@ -22,6 +22,9 @@
     # Corporate RMM agent, host-scoped for the same reason as the two above. Needs
     # the tenant .deb staged at /persist/ninjarmm-agent.deb — see the file header.
     ./apps/framework/ninjarmm-agent.nix
+    # Freshservice MCP server, host-scoped for the same reason as the above:
+    # the tenant is work infrastructure (the L&S Electric helpdesk).
+    ./apps/framework/freshservice-mcp.nix
   ];
 
   itera = {
