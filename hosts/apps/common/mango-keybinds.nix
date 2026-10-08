@@ -233,8 +233,8 @@ in
       # here just set the same value twice. GTK colors now come from the
       # dank-colors.css import wired up in hosts/common.nix.
 
-      # home monitor auto-reset (eiros exec-once): power-cycle the 4K, then reposition laptop
-      exec-once=sh -c 'sleep 15 && output=$(wlr-randr | grep VX3211-4K | awk "{print \$1}") && [ -n "$output" ] && wlr-randr --output "$output" --off && sleep 2 && wlr-randr --output "$output" --on && sleep 1 && wlr-randr --output eDP-1 --pos 2560,220'
+      # home monitor auto-reset: moved to hosts/framework.nix (was duplicated here
+      # too, causing two exec-once copies to race the same wlr-randr off/on at boot).
 
       # NOTE: xkb (us / pc104) is driven by itera.keyboard, not set here -- itera renders
       # xkb before extraConfig, so a duplicate line here would risk a conflicting override.
