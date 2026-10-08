@@ -25,6 +25,9 @@
     # Freshservice MCP server, host-scoped for the same reason as the above:
     # the tenant is work infrastructure (the L&S Electric helpdesk).
     ./apps/framework/freshservice-mcp.nix
+    # NetBox MCP server, host-scoped for the same reason as the above:
+    # the tenant is work infrastructure (http://netbox.lselectric.local).
+    ./apps/framework/netbox-mcp.nix
   ];
 
   itera = {

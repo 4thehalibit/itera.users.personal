@@ -57,6 +57,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # NetBox MCP server (Go), stdio/HTTP. Exposes nixosModules.default
+    # (options: services.netbox-mcp.*). Work infrastructure (L&S Electric's
+    # NetBox instance), so host-scoped exactly like freshservice-mcp above: it
+    # rides in through specialArgs and is imported by
+    # hosts/apps/framework/netbox-mcp.nix. Share our nixpkgs.
+    netbox-mcp = {
+      url = "github:lcleveland/netbox-mcp";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Claude desktop app (Chat/Cowork/Claude Code GUI), official Linux .deb
     # repackaged for NixOS. Personal tool, not corp infra, so it rides in the
     # every-host `modules` list below like ninjarmm-ncplayer rather than being
@@ -75,6 +85,7 @@
       netskope,
       falcon-sensor,
       freshservice-mcp,
+      netbox-mcp,
       claude-desktop,
       ...
     }:
@@ -91,7 +102,7 @@
           # rides along the same way: importing a flake's module is an
           # import-time choice, not a `config.*` option, and this one is
           # framework-only so it must not land in the `modules` list.
-          specialArgs = { inherit itera netskope falcon-sensor freshservice-mcp; };
+          specialArgs = { inherit itera netskope falcon-sensor freshservice-mcp netbox-mcp; };
           modules = [
             itera.nixosModules.default
             ninjarmm-ncplayer.nixosModules.default
