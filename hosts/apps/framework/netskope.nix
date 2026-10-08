@@ -41,11 +41,12 @@
     #   nix store prefetch-file --name NSClient.run \
     #     "https://download-lselectric.goskope.com/dlr/linux/get"
     #
-    # Verified current: the endpoint still serves 25,234,620 bytes, last-modified
-    # 2026-08-01, matching this pin. The client cannot self-update on NixOS
-    # (immutable store), so bumping this hash IS the update path — which is why
-    # `autoUpdate` is left at its default of false.
-    hash = "sha256-lOAsV+/zV1KNZBraDw8qa7nL4SDu0GH3who7fgLhQTI=";
+    # Re-pinned 2026-10-08: tenant endpoint now serves 25,264,112 bytes,
+    # last-modified 2026-09-22 (previous pin was stale, broke `itera update`
+    # with a fixed-output hash mismatch). The client cannot self-update on
+    # NixOS (immutable store), so bumping this hash IS the update path — which
+    # is why `autoUpdate` is left at its default of false.
+    hash = "sha256-Eo3bhli0e6Dacvob3MNch/1QZ6hf6JWclFx/111qtxI=";
 
     # Tray UI — two per-user services wired to graphical-session.target:
     # stagentapp (the watchdog / session IPC broker) and stagentui (the GTK tray
