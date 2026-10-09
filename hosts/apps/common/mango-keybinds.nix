@@ -175,7 +175,8 @@ in
     extraConfig = ''
       # eiros misc mango settings
       enable_hotarea=0
-      ov_tab_mode=1
+      monocle_tab_mode=1
+      deck_tab_mode=1
       idleinhibit_ignore_visible=1
       edge_scroller_pointer_focus=0
       numlockon=1
@@ -204,7 +205,7 @@ in
       scroller_focus_center=0
 
       # popup float rules
-      windowrule=isfloating:1,width:960,height:720,appid:keybinds-popup
+      window_rule=isfloating:1,width:960,height:720,appid:keybinds-popup
 
       # Astros palette (see hosts/common.nix for the DMS half). mango has no
       # typed color options in itera, so colors go through extraConfig; format is
