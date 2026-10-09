@@ -205,7 +205,7 @@ in
       scroller_focus_center=0
 
       # popup float rules
-      window_rule=isfloating:1,width:960,height:720,appid:keybinds-popup
+      window_rule=is_floating:1,width:960,height:720,app_id:keybinds-popup
 
       # Astros palette (see hosts/common.nix for the DMS half). mango has no
       # typed color options in itera, so colors go through extraConfig; format is
