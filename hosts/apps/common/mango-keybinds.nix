@@ -209,6 +209,10 @@ in
       # popup float rules
       window_rule=is_floating:1,width:960,height:720,app_id:keybinds-popup
 
+      # Ticket Triage board always opens on workspace (tag) 2. app_id is what
+      # Vivaldi --app reports for the artifact URL (read via `mmsg get all-clients`).
+      window_rule=tags:2,app_id:vivaldi-claude.ai__artifact_MSgLftH5Ha26feUfYbAzjM-Default
+
       # Astros palette (see hosts/common.nix for the DMS half). mango has no
       # typed color options in itera, so colors go through extraConfig; format is
       # 0xRRGGBBAA. These replace mango's compiled-in defaults (gold focuscolor,
