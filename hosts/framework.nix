@@ -129,7 +129,7 @@
     # Harmless at the office (grep finds no VX3211-4K, so the cycle is skipped).
     # wlr-randr is on PATH via apps/common/personal-commands.nix.
     users.vwestberg.programs.mango.extraConfig = ''
-      exec-once=sh -c 'sleep 15 && output=$(wlr-randr | grep VX3211-4K | awk "{print \$1}") && [ -n "$output" ] && wlr-randr --output "$output" --off && sleep 2 && wlr-randr --output "$output" --on && sleep 1 && wlr-randr --output eDP-1 --pos 2560,220'
+      exec_once=sh -c 'sleep 15 && output=$(wlr-randr | grep VX3211-4K | awk "{print \$1}") && [ -n "$output" ] && wlr-randr --output "$output" --off && sleep 2 && wlr-randr --output "$output" --on && sleep 1 && wlr-randr --output eDP-1 --pos 2560,220'
     '';
   };
 
