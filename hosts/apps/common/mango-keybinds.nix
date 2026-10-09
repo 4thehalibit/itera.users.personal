@@ -140,6 +140,8 @@ in
       webapp_chatgpt            = { modifierKeys = [ "SUPER" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "a";      mangoCommand = "spawn"; commandArguments = "vivaldi --app=https://chatgpt.com"; };
       webapp_email              = { modifierKeys = [ "SUPER" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "e";      mangoCommand = "spawn"; commandArguments = "vivaldi --app=https://outlook.office.com"; };
       webapp_youtube            = { modifierKeys = [ "SUPER" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "y";      mangoCommand = "spawn"; commandArguments = "vivaldi --app=https://youtube.com"; };
+      # Ticket Triage board (Claude artifact). SUPER+t was free; SUPER+SHIFT+t is Teams.
+      webapp_ticket_triage      = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "t";      mangoCommand = "spawn"; commandArguments = "vivaldi --app=https://claude.ai/artifact/MSgLftH5Ha26feUfYbAzjM"; };
 
       # --- popups (launched in wezterm; matched floating via extraConfig) ----
       keybinds_cheatsheet       = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "F1";     mangoCommand = "spawn"; commandArguments = "wezterm start --class keybinds-popup -- keybinds-popup"; };
