@@ -177,9 +177,9 @@ in
       enable_hotarea=0
       monocle_tab_mode=1
       deck_tab_mode=1
-      idleinhibit_ignore_visible=1
+      idle_inhibit_ignore_visible=1
       edge_scroller_pointer_focus=0
-      numlockon=1
+      numlock_on=1
 
       # scroller sizing for the 49" ultrawide (5120px wide). mango's built-in
       # default is 0.8 = new windows fill 80% of the screen, which shoves the
@@ -217,17 +217,17 @@ in
       # bordercolor/focuscolor/urgentcolor, leaving the other eight on mango's
       # unrelated defaults. Explicit values cover all of them and do not depend
       # on DMS having regenerated the file first.
-      bordercolor=0x14508Fff
-      focuscolor=0xEB6E1Fff
-      urgentcolor=0xEF4D5Eff
-      splitcolor=0xFF8A3Dff
-      dropcolor=0x3FA96B55
-      maximizescreencolor=0xF5B335ff
-      scratchpadcolor=0x3E8FD0ff
-      globalcolor=0xC05B8Cff
-      overlaycolor=0x33A8B5ff
-      rootcolor=0x000E1Eff
-      shadowscolor=0x00070Fff
+      border_color=0x14508Fff
+      focus_color=0xEB6E1Fff
+      urgent_color=0xEF4D5Eff
+      split_color=0xFF8A3Dff
+      drop_color=0x3FA96B55
+      maximized_screen_color=0xF5B335ff
+      scratchpad_color=0x3E8FD0ff
+      global_color=0xC05B8Cff
+      overlay_color=0x33A8B5ff
+      root_color=0x000E1Eff
+      shadows_color=0x00070Fff
 
       # NOTE GTK_THEME is NOT set here — itera already exports it system-wide in
       # modules/nixos/desktop/theme.nix, and the duplicate line that used to sit
