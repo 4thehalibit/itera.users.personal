@@ -48,8 +48,8 @@ in
     defaultKeybinds.enable = false;
 
     # Default layout: "tile" = auto-sizing master/stack (Hyprland-like — windows
-    # fill the screen automatically, no manual column widths). SUPER+SHIFT+l cycles
-    # to scroller (scrolling), grid, monocle, etc. mango layouts:
+    # fill the screen automatically, no manual column widths). The SUPER+SHIFT+l
+    # layout-cycle bind is disabled below. mango layouts:
     # tile, scroller, grid, deck, monocle, center_tile, vertical_tile, vertical_scroller.
     layout = "tile";
 
@@ -88,7 +88,8 @@ in
       scroller_stack_right  = { modifierKeys = [ "SUPER" "CTRL" ]; flagModifiers = [ "s" ]; keySymbol = "Right"; mangoCommand = "scroller_stack";           commandArguments = "right"; };
       scroller_stack_up     = { modifierKeys = [ "SUPER" "CTRL" ]; flagModifiers = [ "s" ]; keySymbol = "Up";    mangoCommand = "scroller_stack";           commandArguments = "up"; };
       scroller_stack_down   = { modifierKeys = [ "SUPER" "CTRL" ]; flagModifiers = [ "s" ]; keySymbol = "Down";  mangoCommand = "scroller_stack";           commandArguments = "down"; };
-      cycle_layout          = { modifierKeys = [ "SUPER" "SHIFT" ];flagModifiers = [ "s" ]; keySymbol = "l";     mangoCommand = "switch_layout";            commandArguments = null; };  # flip scroller/tile/grid/monocle to compare
+      # cycle_layout (SUPER+SHIFT+l, switch_layout) DISABLED 2026-10-12: may be unneeded after the update. Restore this line if layout cycling is missed.
+      # cycle_layout          = { modifierKeys = [ "SUPER" "SHIFT" ];flagModifiers = [ "s" ]; keySymbol = "l";     mangoCommand = "switch_layout";            commandArguments = null; };
 
       # --- window / session --------------------------------------------------
       close_window              = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "w";      mangoCommand = "killclient";           commandArguments = null; }; # eiros override q -> w
