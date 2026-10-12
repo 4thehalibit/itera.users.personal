@@ -10,6 +10,7 @@
     gnumake
     nixfmt
     fastfetch
+    sox # Claude Code /voice mic recording (`rec`)
   ];
 
   programs.nix-ld = {
