@@ -163,9 +163,16 @@
       # here, carry on with normal resolution" — that is what lets the forward-zone
       # see the query. Most-specific local-zone wins, so everything else under
       # `.local` is still answered locally and never leaks.
+      #
+      # `home.arpa` (RFC 8375, the homelab's internal domain) is a built-in default
+      # local zone in unbound, answered NXDOMAIN in ~15ms without asking anyone —
+      # measured 2026-10-13 against the Pi-holes, which answer the same names fine.
+      # Same fix as lselectric.local: `transparent` lets the forward-zone below see
+      # the query.
       local-zone = [
         ''"local." static''
         ''"lselectric.local." transparent''
+        ''"home.arpa." transparent''
       ];
     };
 
@@ -224,6 +231,22 @@
         # TCP/53 behaved inconsistently in testing, and these are tunnelled
         # destinations rather than blocked public ones.
         forward-tcp-upstream = false;
+      }
+      {
+        # Homelab names (pve1..4, pihole1/2, pdm, mealie...) live on the two
+        # Pi-holes. Scoped to home.arpa ONLY, so no other lookup can ever stall on
+        # a home-only host, which is the failure the header rejects. Away from home
+        # a home.arpa lookup simply fails, which is correct. TCP on purpose: UDP to
+        # a LAN resolver is the one combination Netskope steering drops. This is a
+        # per-zone setting, so it does NOT trigger the global tcp-upstream problem
+        # described above (the client's UDP-only hostname learning is untouched for
+        # every other name). No ad-blocking is implied: only this domain goes there.
+        name = "home.arpa.";
+        forward-addr = [
+          "192.168.7.21"
+          "192.168.7.22"
+        ];
+        forward-tcp-upstream = true;
       }
     ];
   };
