@@ -22,6 +22,7 @@
     ./apps/common/phisher-triage.nix # `phisher` PhishER triage CLI (~/Documents/phisher-triage)
     ./apps/common/dev-tools.nix
     ./apps/common/flake-preflight.nix # `flake-eval` preflight + weekly input check
+    ./apps/common/watchtower.nix # security dashboard tray icon + server
 
     # Kept personal automations / tools.
     ./apps/common/teams-music-pause.nix # pause music when Teams grabs the mic

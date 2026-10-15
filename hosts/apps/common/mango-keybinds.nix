@@ -143,6 +143,8 @@ in
       webapp_youtube            = { modifierKeys = [ "SUPER" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "y";      mangoCommand = "spawn"; commandArguments = "vivaldi --app=https://youtube.com"; };
       # Ticket Triage board (Claude artifact). SUPER+t was free; SUPER+SHIFT+t is Teams.
       webapp_ticket_triage      = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "t";      mangoCommand = "spawn"; commandArguments = "vivaldi --app=https://claude.ai/artifact/MSgLftH5Ha26feUfYbAzjM"; };
+      # Watchtower security dashboard (local server, started by the watchtower user service).
+      webapp_watchtower         = { modifierKeys = [ "SUPER" "SHIFT" ]; flagModifiers = [ "s" ]; keySymbol = "w";      mangoCommand = "spawn"; commandArguments = "vivaldi --app=http://127.0.0.1:8787"; };
 
       # --- popups (launched in wezterm; matched floating via extraConfig) ----
       keybinds_cheatsheet       = { modifierKeys = [ "SUPER" ];         flagModifiers = [ "s" ]; keySymbol = "F1";     mangoCommand = "spawn"; commandArguments = "wezterm start --class keybinds-popup -- keybinds-popup"; };
@@ -213,6 +215,10 @@ in
       # Ticket Triage board always opens on workspace (tag) 2. app_id is what
       # Vivaldi --app reports for the artifact URL (read via `mmsg get all-clients`).
       window_rule=tags:2,app_id:vivaldi-claude.ai__artifact_MSgLftH5Ha26feUfYbAzjM-Default
+
+      # Watchtower dashboard also on workspace 2. app_id derived from the URL the
+      # same way (host + "_" + path, "/" -> "_"); verify with `mmsg get all-clients`.
+      window_rule=tags:2,app_id:vivaldi-127.0.0.1__-Default
 
       # Astros palette (see hosts/common.nix for the DMS half). mango has no
       # typed color options in itera, so colors go through extraConfig; format is
