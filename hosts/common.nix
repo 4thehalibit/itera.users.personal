@@ -20,6 +20,7 @@
     ./apps/common/uxplay.nix # AirPlay receiver: iPhone screen-cast to this machine (run `airplay`)
     ./apps/common/eml-viewer.nix # lightweight .eml viewer (renders to browser)
     ./apps/common/phisher-triage.nix # `phisher` PhishER triage CLI (~/Documents/phisher-triage)
+    ./apps/common/exo.nix # `exo` Exchange Online PowerShell (admin device login)
     ./apps/common/dev-tools.nix
     ./apps/common/flake-preflight.nix # `flake-eval` preflight + weekly input check
     ./apps/common/watchtower.nix # security dashboard tray icon + server
