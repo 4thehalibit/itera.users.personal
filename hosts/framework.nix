@@ -31,6 +31,23 @@
   ];
 
   itera = {
+    # nixpkgs' framework-laptop-kmod installs the bare .ko by hand, so kbuild's
+    # signing step never writes the .ko.cer that aggregateModules now cats
+    # ("cat: extra/framework_laptop.ko.cer: No such file"). Install through
+    # modules_install instead. Same fix as lcleveland/itera.personal.
+    # ponytail: drop once nixpkgs fixes the package.
+    boot.kernelPackages = pkgs.linuxPackages_latest.extend (
+      _: super: {
+        framework-laptop-kmod = super.framework-laptop-kmod.overrideAttrs {
+          installPhase = ''
+            runHook preInstall
+            make -C ${super.kernel.dev}/lib/modules/${super.kernel.modDirVersion}/build M="$PWD" INSTALL_MOD_PATH=$out $makeFlags modules_install
+            runHook postInstall
+          '';
+        };
+      }
+    );
+
     networking.hostName = "LS-04391";
     hardware.cpu = "amd";
 
