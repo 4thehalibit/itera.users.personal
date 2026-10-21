@@ -282,8 +282,8 @@
           enabled = true;
           position = 0;
           screenPreferences = [
-            "DP-4"
-            "DP-11"
+            "VX3211-4K"
+            "XG49DH16C"
           ];
           # MUST be false — see the trap note above. True would put this bar
           # back on the laptop whenever the laptop is the only screen.

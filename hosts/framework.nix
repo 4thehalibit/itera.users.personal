@@ -78,9 +78,9 @@
       # fires (the panel then falls back to scale 1.0 = everything tiny). The
       # ViewSonic comes up on connector DP-4 (HDMI expansion card). `model` kept
       # as documentation/extra constraint. If the connector number ever changes
-      # (cards reslotted), update ^DP-4$ — check `wlr-randr`.
+      # (cards reslotted), no change needed: matched by model (name is a regex).
       "VX3211-4K" = {
-        name = "^DP-4$";
+        name = "^DP-[0-9]+$";
         model = "VX3211-4K";
         width = 3840;
         height = 2160;
@@ -93,14 +93,15 @@
       # Comes up on connector DP-11 via the USB-C dock (DisplayPort in; the HDMI
       # cable is unplugged on purpose — a second cable makes the dock emit a
       # phantom MST output and splits bandwidth). If the connector number ever
-      # changes (dock reslotted / different USB-C port), update ^DP-11$ — check
-      # `wlr-randr`. Panel is ~108 PPI so scale 1.0 is native (no scaling).
+      # changes (DP-MST docks renumber DP-10/11/12 on every replug), so the name is a
+      # regex and the panel is matched by model + serial. Panel is ~108 PPI so scale 1.0 is native (no scaling).
       # NOTE: full 165Hz needs a DIRECT DisplayPort cable into a Framework DP
       # expansion card (no dock) — the dock's USB-C link caps this at 120Hz.
       # PBP/PIP (a 2nd machine on the monitor's other input) is a monitor-OSD
       # feature — no config change needed to switch inputs.
       "XG49DH16C" = {
-        name = "^DP-11$";
+        name = "^DP-[0-9]+$";
+        serial = "000000000001";
         model = "XG49DH16C";
         width = 5120;
         height = 1440;
