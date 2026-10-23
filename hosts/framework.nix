@@ -151,6 +151,19 @@
     '';
   };
 
+  # PCS front office: HP LaserJet Flow MFP E82560 (raw 9100; IPP/631 is closed).
+  # Generic PostScript PPD: no exact E82560 PPD ships with hplip.
+  hardware.printers = {
+    ensureDefaultPrinter = "PCS-Front-Office";
+    ensurePrinters = [{
+      name = "PCS-Front-Office";
+      location = "PCS front office";
+      deviceUri = "socket://10.2.70.130:9100";
+      model = "drv:///sample.drv/generic.ppd";
+      ppdOptions.PageSize = "Letter";
+    }];
+  };
+
   # Boot splash: itera's hardening boots fully silent (`quiet loglevel=0
   # udev.log_level=3`), so from bootloader handoff until the DMS greeter paints
   # there was only a black screen — long enough (with all the IOMMU/mitigation
