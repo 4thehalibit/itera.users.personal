@@ -46,7 +46,7 @@
     # with a fixed-output hash mismatch). The client cannot self-update on
     # NixOS (immutable store), so bumping this hash IS the update path — which
     # is why `autoUpdate` is left at its default of false.
-    hash = "sha256-G4LsQcHns6C8JIgFPQPfay4S74CLEobM1uaR1t1xqeI="; # re-pinned 2026-10-21, tenant served a new build
+    hash = "sha256-yyjxUXhD4VF7K9gDyLPYE79xlOMrzEWnVQbrAYl0nWM="; # re-pinned 2026-10-28, tenant served a new build (31,448,658 bytes)
 
     # Tray UI — two per-user services wired to graphical-session.target:
     # stagentapp (the watchdog / session IPC broker) and stagentui (the GTK tray
