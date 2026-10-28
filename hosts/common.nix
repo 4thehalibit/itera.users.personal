@@ -241,6 +241,8 @@
           leftWidgets = [
             "launcherButton"
             "workspaceSwitcher"
+            # mango layout picker (itera's default has it; restating barConfigs dropped it).
+            "layout"
             # Smallest variant, no title text: the window title is the single
             # most elastic thing on the bar and it is already in the overview.
             {
@@ -291,6 +293,8 @@
           leftWidgets = [
             "launcherButton"
             "workspaceSwitcher"
+            # mango layout picker (itera's default has it; restating barConfigs dropped it).
+            "layout"
             "focusedWindow"
           ];
           centerWidgets = [
