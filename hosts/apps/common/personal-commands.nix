@@ -85,6 +85,62 @@ let
     ${pkgs.git}/bin/git push
     exec itera update
   '';
+
+  # upgrade: one-shot itera update. Preflight, bump the itera input, eval-check,
+  # push the lock, then stage the build for the next boot (reboot applies it).
+  # A live `itera update` can restart systemd mid-switch and blank /etc/machine-id,
+  # so this uses `update on-reboot`. Use `deploy` for your own config edits.
+  upgrade = pkgs.writeShellScriptBin "upgrade" ''
+    set -e
+    cd "$HOME/Documents/itera.users.personal"
+    flake=github:4thehalibit/itera.users.personal
+
+    # Blank machine-id (empty tmpfs copy) makes the bootloader step die with an
+    # IndexError. The persisted copy is the real one.
+    if [ ! -s /etc/machine-id ]; then
+      echo "preflight: /etc/machine-id is blank, restoring from /persist"
+      sudo cp /persist/etc/machine-id /etc/machine-id
+    fi
+
+    # Only the lock may change here, so anything else dirty belongs to `deploy`.
+    if ! ${pkgs.git}/bin/git diff --quiet || ! ${pkgs.git}/bin/git diff --cached --quiet; then
+      echo "uncommitted changes in the config checkout, run deploy first." >&2
+      exit 1
+    fi
+    ${pkgs.git}/bin/git pull --ff-only
+
+    before=$(${pkgs.jq}/bin/jq -r .nodes.itera.locked.rev flake.lock)
+    ${pkgs.nix}/bin/nix flake update itera
+    after=$(${pkgs.jq}/bin/jq -r .nodes.itera.locked.rev flake.lock)
+    echo "itera: ''${before:0:7} -> ''${after:0:7}"
+
+    echo "preflight: evaluating config..."
+    flake-eval . >/dev/null || {
+      echo "config does not evaluate with the bumped lock, nothing pushed." >&2
+      ${pkgs.git}/bin/git checkout flake.lock
+      exit 1
+    }
+    if ! ${pkgs.git}/bin/git diff --quiet; then
+      ${pkgs.git}/bin/git commit -am "chore: bump itera to ''${after:0:7}"
+      ${pkgs.git}/bin/git push
+    fi
+
+    # nix caches the remote flake ref for an hour, so refresh and confirm it sees
+    # the commit just pushed, or `itera update` silently rebuilds the old tree.
+    seen=$(${pkgs.nix}/bin/nix flake metadata "$flake" --refresh --json | ${pkgs.jq}/bin/jq -r .locked.rev)
+    if [ "$seen" != "$(${pkgs.git}/bin/git rev-parse HEAD)" ]; then
+      echo "remote flake is at $seen, not HEAD. Wait a minute and re-run." >&2
+      exit 1
+    fi
+
+    itera update on-reboot
+
+    if [ "$(readlink -f /run/current-system)" != "$(readlink -f /nix/var/nix/profiles/system)" ]; then
+      echo "update staged. Reboot to apply."
+    else
+      echo "already up to date, no reboot needed."
+    fi
+  '';
 in
 {
   environment.systemPackages = [
@@ -96,6 +152,7 @@ in
     freshworks
     rebuild
     deploy
+    upgrade
     ninjaoneUpdate
     ninjaonePin
     pkgs.distrobox
