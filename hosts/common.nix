@@ -18,6 +18,7 @@
     ./apps/common/caprine.nix
     ./apps/common/vlc.nix
     ./apps/common/uxplay.nix # AirPlay receiver: iPhone screen-cast to this machine (run `airplay`)
+    ./apps/common/tailscale.nix # tailnet client for homelab access (DNS untouched)
     ./apps/common/eml-viewer.nix # lightweight .eml viewer (renders to browser)
     ./apps/common/phisher-triage.nix # `phisher` PhishER triage CLI (~/Documents/phisher-triage)
     ./apps/common/exo.nix # `exo` Exchange Online PowerShell (admin device login)
