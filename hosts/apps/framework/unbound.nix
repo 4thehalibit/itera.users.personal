@@ -248,6 +248,19 @@
         ];
         forward-tcp-upstream = true;
       }
+      {
+        # The homelab's primary domain is `.home` (bookstack.home, pve1.home ...);
+        # home.arpa above is the secondary. Same Pi-holes, same reasoning, same TCP.
+        # Without this entry `.home` fell through to the root forward-zone and 8.8.8.8
+        # answered NXDOMAIN, so every .home name failed here even at home. `home` is
+        # not one of unbound's default local zones, so no local-zone entry is needed.
+        name = "home.";
+        forward-addr = [
+          "192.168.7.21"
+          "192.168.7.22"
+        ];
+        forward-tcp-upstream = true;
+      }
     ];
   };
 
