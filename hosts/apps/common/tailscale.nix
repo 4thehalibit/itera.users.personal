@@ -17,7 +17,10 @@
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "client";
-    extraSetFlags = [ "--accept-dns=false" ];
+    # --operator lets the bar toggle (apps/common/dms-tailscale) run `tailscale
+    # up/down` without sudo. Keep it in step with the `up` command in that
+    # widget: `up --reset` clears the operator unless it is named again.
+    extraSetFlags = [ "--accept-dns=false" "--operator=vwestberg" ];
   };
 
   itera.impermanence.directories = [ "/var/lib/tailscale" ];

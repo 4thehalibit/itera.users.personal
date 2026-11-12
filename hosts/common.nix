@@ -259,6 +259,7 @@
           rightWidgets = [
             # where am I
             "ipIndicator"
+            "tailscale"
             # Hard cap at 3. DMS's auto-overflow otherwise allows up to ~50% of
             # the section width (clamped 2-10), so on this panel the tray would
             # grow to roughly 8 icons before hiding any. Anything past the third
@@ -306,6 +307,7 @@
           rightWidgets = [
             # where am I
             "ipIndicator"
+            "tailscale"
             "systemTray"
             "separator"
             # machine load — minimumWidth = false drops the invisible "100%"
@@ -331,6 +333,10 @@
     # match the `id` in its plugin.json — DMS looks the enabled flag up by
     # manifest id.
     programs.dankMaterialShell.plugins.caffeine.src = ./apps/common/dms-caffeine;
+
+    # Click-to-toggle Tailscale pill (apps/common/tailscale.nix is the service).
+    # Same id rule as caffeine: the attr name must match plugin.json's `id`.
+    programs.dankMaterialShell.plugins.tailscale.src = ./apps/common/dms-tailscale;
 
     # Local fork of upstream's iteraUpdate pill, purely to put two buttons in
     # its popout (upstream's is read-only by design and only prints the

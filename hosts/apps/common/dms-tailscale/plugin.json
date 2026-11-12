@@ -1,0 +1,15 @@
+{
+  "id": "tailscale",
+  "name": "Tailscale",
+  "description": "Click to connect or disconnect Tailscale. Filled and accent-colored while connected, hollow when off.",
+  "version": "1.0.0",
+  "author": "Vincent Westberg",
+  "icon": "vpn_lock",
+  "type": "widget",
+  "capabilities": [
+    "dankbar-widget"
+  ],
+  "component": "./TailscaleWidget.qml",
+  "permissions": ["process"],
+  "requires_dms": ">=1.5.0"
+}
