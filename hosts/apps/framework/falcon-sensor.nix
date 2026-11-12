@@ -76,15 +76,18 @@
     # Never `cid = "..."` — this repo is public.
     cidFile = "/persist/secrets/falcon-cid";
 
-    # 8.10.19402, the newest this tenant offers as of 2026-09-10 (tenant cloud
-    # us-2). One hash covers both the Ubuntu and Debian rows find-sensor lists,
-    # because it is the same .deb. CrowdStrike's download endpoint is keyed by
-    # this same sha256, so the value both selects the installer and verifies it.
+    # 8.10.19403 (tenant cloud us-2), the build the tenant's Linux sensor update
+    # policies hand this host: "Linux Sensor Update N-1" (Workstations group) and
+    # platform_default both resolve to 19403|n-1. Pinned to match so the sensor
+    # stops trying to self-update. It had been on 19402 (the newest offered on
+    # 2026-09-10), which left it logging `Error switching to new Sensor:
+    # c0000145` about every 10 minutes once the policy moved on. If the policy
+    # moves again, expect the same error: re-run find-sensor and bump this.
     #
-    # This happens to equal the `example` in the upstream option's docs. That is
-    # a coincidence of both pointing at the current release — it is a real value
-    # taken from this tenant's find-sensor output, not a placeholder left in.
-    hash = "sha256-RVNTBhFgWCM2y2bT4POM6btnvXiOFReoL1LvODFvVs8=";
+    # One hash covers both the Ubuntu and Debian rows find-sensor lists, because
+    # it is the same .deb. CrowdStrike's download endpoint is keyed by this same
+    # sha256, so the value both selects the installer and verifies it.
+    hash = "sha256-814x8FpHXHZrGedi3HiEasKQBjPNkxAw4EHrkxGUsWA=";
     api.clientIdFile = "/persist/secrets/falcon-api-client-id";
     api.clientSecretFile = "/persist/secrets/falcon-api-client-secret";
 
