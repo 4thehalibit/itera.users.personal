@@ -37,6 +37,15 @@ let
     ${claudeCmd}/bin/claude "$@"
   '';
 
+  # sudo-askpass: GUI password prompt for sudo when there is no terminal to ask on,
+  # i.e. commands run by Claude Code (its shell has no tty, and `!` does not give
+  # it one). sudo.conf below points sudo at this; in a real terminal sudo still
+  # prompts on the tty as usual. A visible window per privileged command keeps a
+  # human approving each one, unlike a NOPASSWD rule.
+  sudoAskpass = pkgs.writeShellScriptBin "sudo-askpass" ''
+    exec ${pkgs.zenity}/bin/zenity --password --title="$1"
+  '';
+
   # freshworks: drop into the freshworks-dev distrobox container.
   # NOTE the container itself is imperative — recreate it after reinstall with
   # `distrobox create --name freshworks-dev ...`.
@@ -162,6 +171,7 @@ in
     # wrapper and `claude` no longer cd's into ~/claude first.
     (lib.hiPrio claudeCmd)
     claudeHome
+    sudoAskpass
     freshworks
     rebuild
     deploy
@@ -172,4 +182,10 @@ in
     pkgs.wlr-randr
     pkgs.jq
   ];
+
+  # Stable path (not a store path) so the config survives rebuilds. /tmp is
+  # noexec here, so the helper cannot live there.
+  environment.etc."sudo.conf".text = ''
+    Path askpass /run/current-system/sw/bin/sudo-askpass
+  '';
 }

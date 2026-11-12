@@ -36,7 +36,15 @@
     # ("cat: extra/framework_laptop.ko.cer: No such file"). Install through
     # modules_install instead. Same fix as lcleveland/itera.personal.
     # ponytail: drop once nixpkgs fixes the package.
-    boot.kernelPackages = pkgs.linuxPackages_latest.extend (
+    #
+    # Pinned to 7.2 instead of linuxPackages_latest because the Falcon sensor's
+    # eBPF backend fails on 7.3.0 (`bpf initialization failed: e00400ad`, RFM
+    # reason "BPF program-load error, code=0xE00400AD", so no detection or
+    # prevention). Every boot on 7.2.9 (Oct 23-27) was clean; every boot on 7.3.0
+    # (since Oct 28) fails, with the same sensor build and hardening. 7.2 is not
+    # an LTS: when it goes end of life, retry linuxPackages_latest or move to
+    # linuxPackages (6.18 LTS) after checking the sensor still loads.
+    boot.kernelPackages = pkgs.linuxKernel.packages.linux_7_2.extend (
       _: super: {
         framework-laptop-kmod = super.framework-laptop-kmod.overrideAttrs {
           installPhase = ''
