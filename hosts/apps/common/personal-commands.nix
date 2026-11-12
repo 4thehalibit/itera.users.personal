@@ -19,24 +19,22 @@ let
   # the Claude "project" (memory/history live under -home-vwestberg-claude), so
   # ensure it exists — impermanence wipes $HOME each boot and ~/claude is not on
   # the persist allowlist, so mkdir it here rather than relying on it surviving.
-  #
-  # Also tints the terminal dark green (OSC 11) while off the work LAN, so a home
-  # session looks different; work keeps the stock background. Tailscale and
-  # Netskope are up everywhere, so they cannot tell sites apart: only the work
-  # LAN's DHCP hands out the lselectric.local search domain. The budget-meter
-  # mod runs the same check for its status line tag.
   claudeCmd = pkgs.writeShellScriptBin "claude" ''
     mkdir -p "$HOME/claude"
     cd "$HOME/claude" 2>/dev/null || cd "$HOME"
-    if [ -t 1 ] && domains=$(${pkgs.systemd}/bin/resolvectl domain 2>/dev/null) \
-      && ! printf '%s\n' "$domains" | grep '^Link' | grep -q 'lselectric\.local'; then
+    exec ${pkgs.claude-code}/bin/claude "$@"
+  '';
+
+  # claude.home: the same claude, but the terminal background goes dark green
+  # (OSC 11) for the session and resets on exit, so a session used for home work
+  # is easy to tell apart. Picked by name, not detected: `claude` stays stock.
+  claudeHome = pkgs.writeShellScriptBin "claude.home" ''
+    if [ -t 1 ]; then
       printf '\033]11;#03200F\a'
       trap 'printf "\033]111\a"' EXIT
       trap exit INT TERM HUP
-      ${pkgs.claude-code}/bin/claude "$@"
-    else
-      exec ${pkgs.claude-code}/bin/claude "$@"
     fi
+    ${claudeCmd}/bin/claude "$@"
   '';
 
   # freshworks: drop into the freshworks-dev distrobox container.
@@ -163,6 +161,7 @@ in
     # itera.ai.claude.enable also installs — otherwise the raw package shadows the
     # wrapper and `claude` no longer cd's into ~/claude first.
     (lib.hiPrio claudeCmd)
+    claudeHome
     freshworks
     rebuild
     deploy
