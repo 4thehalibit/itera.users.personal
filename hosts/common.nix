@@ -338,14 +338,6 @@
     # Same id rule as caffeine: the attr name must match plugin.json's `id`.
     programs.dankMaterialShell.plugins.tailscale.src = ./apps/common/dms-tailscale;
 
-    # Local fork of upstream's iteraUpdate pill, purely to put two buttons in
-    # its popout (upstream's is read-only by design and only prints the
-    # command). `src` is an mkDefault in itera desktop/update-indicator.nix, so
-    # this overrides the store copy and nothing else about the widget changes —
-    # the check command, settings and bar registration all stay upstream's.
-    # Re-copy pkgs/dms-itera-update from the itera source if the pill changes.
-    programs.dankMaterialShell.plugins.iteraUpdate.src = ./apps/common/dms-itera-update;
-
     # NOTE: do NOT list a directory here that itera already persists by default
     # (.config/.local/.cache/.ssh/.claude/Documents/Downloads/Pictures).
     # environment.persistence asserts on duplicate directories, so a duplicate

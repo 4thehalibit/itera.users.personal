@@ -162,9 +162,28 @@ let
       echo "already up to date, no reboot needed."
     fi
   '';
+
+  # Launcher entry for `upgrade`, so updating needs no typing. A terminal is
+  # required (sudo prompts), and the trailing read keeps the window up so a
+  # failure or the "Reboot to apply" line can be read.
+  upgradeWindow = pkgs.writeShellScript "upgrade-window" ''
+    ${upgrade}/bin/upgrade
+    echo
+    read -rp 'Press enter to close...'
+  '';
+  upgradeDesktop = pkgs.makeDesktopItem {
+    name = "update-system";
+    desktopName = "Update System";
+    comment = "Bump itera, check the config, stage the update for next reboot";
+    exec = "wezterm start -- ${upgradeWindow}";
+    icon = "system-software-update";
+    terminal = false;
+    categories = [ "System" ];
+  };
 in
 {
   environment.systemPackages = [
+    upgradeDesktop
     fixhdmi
     # hiPri so this "claude" wins the PATH collision against the claude-code that
     # itera.ai.claude.enable also installs — otherwise the raw package shadows the
