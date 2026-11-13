@@ -5,7 +5,7 @@
 # Scope decision: only genuinely personal items are ported from eiros. Shell,
 # terminal, editor and desktop theme adopt itera's defaults (nushell, wezterm,
 # zed, default DMS theme) rather than porting the old eiros customizations.
-{ pkgs, ... }:
+{ pkgs, lib, config, ... }:
 {
   imports = [
     # Apps actually used. GUI apps install per-user; CLI/services in their module.
@@ -271,6 +271,9 @@
             "notificationButton"
             "separator"
             # controls
+          ]
+          ++ lib.optionals (config.services ? netskope) [ "netskope" ]
+          ++ [
             "caffeine"
             # Icon only on AC, number when it actually matters.
             { id = "battery"; showBatteryPercentOnlyOnBattery = true; }
@@ -321,6 +324,9 @@
             "notificationButton"
             "separator"
             # controls
+          ]
+          ++ lib.optionals (config.services ? netskope) [ "netskope" ]
+          ++ [
             "caffeine"
             "battery"
             "controlCenterButton"
@@ -337,6 +343,14 @@
     # Click-to-toggle Tailscale pill (apps/common/tailscale.nix is the service).
     # Same id rule as caffeine: the attr name must match plugin.json's `id`.
     programs.dankMaterialShell.plugins.tailscale.src = ./apps/common/dms-tailscale;
+
+    # Netskope plugin registration itself lives in apps/framework/netskope.nix,
+    # not here: writing plugins.netskope.src in this shared file — even behind
+    # mkIf — still creates the "netskope" key in that attrsOf submodule on
+    # EVERY host, since mkIf only makes the leaf value conditional, not the
+    # key's existence. generic/personal don't import netskope.nix and choked
+    # on the resulting valueless submodule. The "netskope" widget id above is
+    # a plain string with no such cost: DMS just skips an unregistered id.
 
     # NOTE: do NOT list a directory here that itera already persists by default
     # (.config/.local/.cache/.ssh/.claude/Documents/Downloads/Pictures).

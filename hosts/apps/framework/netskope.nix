@@ -46,14 +46,25 @@
     # with a fixed-output hash mismatch). The client cannot self-update on
     # NixOS (immutable store), so bumping this hash IS the update path — which
     # is why `autoUpdate` is left at its default of false.
-    hash = "sha256-yyjxUXhD4VF7K9gDyLPYE79xlOMrzEWnVQbrAYl0nWM="; # re-pinned 2026-10-28, tenant served a new build (31,448,658 bytes)
+    hash = "sha256-pavnz0yuhI9A31KfHyYNTa8MOg7Dkh1HwqQVc0sUomU="; # re-pinned 2026-11-13, tenant served a new build (31,564,935 bytes, 141.1.7.2827)
 
     # Tray UI — two per-user services wired to graphical-session.target:
     # stagentapp (the watchdog / session IPC broker) and stagentui (the GTK tray
-    # icon). The tray is the only place the client surfaces its enrollment and
-    # steering status, which is worth the GTK+WebKit closure on a desktop host.
-    # DankMaterialShell provides the StatusNotifier host it registers against.
+    # icon). stagentapp (the session IPC broker) keeps running either way; the
+    # GTK icon itself is replaced below by dmsWidget, same as lcleveland/itera.personal.
     enableTray = true;
+    trayIcon = false;
+
+    # DMS bar widget (status, steering on/off, logs, blocked events, version) plus
+    # a daemon on/off switch, matching lcleveland/itera.personal. Registered below
+    # as plugins.netskope.src; the id in plugin.json must match ("netskope").
+    dmsWidget.enable = true;
+
+    # Lets the bar widget's daemon switch run systemctl start|stop stagentd with
+    # no password prompt (a polkit rule for active wheel users). Stopping the
+    # daemon is the one off switch that always works even if the tenant forbids
+    # turning steering off from the client itself.
+    allowDaemonControl = true;
 
     # Start at boot. Was false for part of 2026-08-20, after the first boot that
     # actually steered took the network down at home; set back to true the same day
@@ -189,6 +200,16 @@
       email = "vwestberg@lselectric.com";
     };
   };
+
+  # dmsWidget.enable above only builds the plugin directory (id "netskope");
+  # upstream deliberately leaves registering it to the host, since it has no
+  # opinion on which DMS this lands in. This file is framework-only (see the
+  # top comment), so unlike caffeine/tailscale this can't live in common.nix:
+  # generic/personal don't import this file, and writing plugins.netskope.src
+  # there — even behind mkIf — still creates the "netskope" key in that
+  # attrsOf submodule on every host and breaks their eval with a valueless
+  # option. Here it's unconditionally correct.
+  programs.dankMaterialShell.plugins.netskope.src = config.services.netskope.dmsWidget.package;
 
   # The package installs everything under $out/opt/netskope/stagent and ships no
   # $out/bin, so the module's `environment.systemPackages = [ cfg.package ]` puts
