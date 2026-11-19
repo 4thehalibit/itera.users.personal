@@ -169,6 +169,17 @@
       deviceUri = "socket://10.2.70.130:9100";
       model = "drv:///sample.drv/generic.ppd";
       ppdOptions.PageSize = "Letter";
+    }
+    # Home upstairs office: HP Color LaserJet Pro MFP M177fw. mDNS hostname instead
+    # of the IP so a DHCP change does not break it (avahi resolves .local). Driverless
+    # "everywhere": the printer advertises URF/PCLm/JPEG over IPP. Not the default, so
+    # PCS-Front-Office stays default; the printer simply fails to resolve off the home LAN.
+    {
+      name = "Home-Upstairs";
+      location = "Home upstairs office";
+      deviceUri = "ipp://DEVAFACCC.local/ipp/print";
+      model = "everywhere";
+      ppdOptions.PageSize = "Letter";
     }];
   };
 
