@@ -180,6 +180,11 @@ in
     extraConfig = ''
       # eiros misc mango settings
       enable_hotarea=0
+      # New windows open in the side stacks, not the center. mango's default
+      # (new_is_master=1) makes every new window the master, which center_tile
+      # draws in the middle. Global: in tile a new window no longer takes the
+      # master slot either.
+      new_is_master=0
       monocle_tab_mode=1
       deck_tab_mode=1
       idle_inhibit_ignore_visible=1
