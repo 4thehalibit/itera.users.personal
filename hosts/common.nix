@@ -17,6 +17,7 @@
     ./apps/common/vesktop.nix
     ./apps/common/caprine.nix
     ./apps/common/vlc.nix
+    ./apps/common/stremio.nix
     ./apps/common/uxplay.nix # AirPlay receiver: iPhone screen-cast to this machine (run `airplay`)
     ./apps/common/tailscale.nix # tailnet client for homelab access (DNS untouched)
     ./apps/common/eml-viewer.nix # lightweight .eml viewer (renders to browser)
